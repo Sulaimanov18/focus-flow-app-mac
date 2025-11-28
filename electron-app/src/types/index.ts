@@ -43,3 +43,23 @@ export const TIMER_MODE_LABELS: Record<TimerMode, string> = {
   shortBreak: 'Short',
   longBreak: 'Long',
 };
+
+// Stats types
+export interface DayActivity {
+  date: string; // "YYYY-MM-DD"
+  pomodoros: number;
+  completedTasks: number;
+  hasNote: boolean;
+}
+
+export interface TodaySummary {
+  pomodoros: number;
+  minutes: number;
+  completedTasks: number;
+}
+
+export interface WeekSummary {
+  pomodoros: number;
+  minutes: number;
+  activeDays: number;
+}

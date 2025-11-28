@@ -1,6 +1,76 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Tab, Task, TimerMode, TimerState, MusicTrack, User, TIMER_DURATIONS } from '../types';
+import { Tab, Task, TimerMode, TimerState, MusicTrack, User, TIMER_DURATIONS, DayActivity, TodaySummary, WeekSummary } from '../types';
+
+// Helper to get today's date as YYYY-MM-DD
+function getTodayDate(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+// Helper to get date X days ago
+function getDateDaysAgo(daysAgo: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString().split('T')[0];
+}
+
+// Check if a day is active
+function isDayActive(activity: DayActivity | undefined): boolean {
+  if (!activity) return false;
+  return activity.pomodoros > 0 || activity.completedTasks > 0 || activity.hasNote;
+}
+
+// Calculate streak
+export function calculateStreak(byDate: Record<string, DayActivity>): number {
+  const today = getTodayDate();
+  let streak = 0;
+  let currentDate = today;
+
+  while (isDayActive(byDate[currentDate])) {
+    streak++;
+    // Move to previous day
+    const date = new Date(currentDate);
+    date.setDate(date.getDate() - 1);
+    currentDate = date.toISOString().split('T')[0];
+  }
+
+  return streak;
+}
+
+// Get today's summary
+export function getTodaySummary(byDate: Record<string, DayActivity>): TodaySummary {
+  const today = getTodayDate();
+  const activity = byDate[today];
+
+  return {
+    pomodoros: activity?.pomodoros ?? 0,
+    minutes: (activity?.pomodoros ?? 0) * 25, // 25 min per pomodoro
+    completedTasks: activity?.completedTasks ?? 0,
+  };
+}
+
+// Get this week's summary (last 7 days including today)
+export function getWeekSummary(byDate: Record<string, DayActivity>): WeekSummary {
+  let pomodoros = 0;
+  let activeDays = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const date = getDateDaysAgo(i);
+    const activity = byDate[date];
+    if (activity) {
+      pomodoros += activity.pomodoros;
+      if (isDayActive(activity)) {
+        activeDays++;
+      }
+    }
+  }
+
+  return {
+    pomodoros,
+    minutes: pomodoros * 25,
+    activeDays,
+  };
+}
 
 interface AppState {
   // UI State
@@ -47,6 +117,12 @@ interface AppState {
   currentUser: User | null;
   setIsLoggedIn: (loggedIn: boolean) => void;
   setCurrentUser: (user: User | null) => void;
+
+  // Stats State
+  statsByDate: Record<string, DayActivity>;
+  recordPomodoro: () => void;
+  recordTaskCompletion: () => void;
+  recordNoteActivity: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -124,22 +200,44 @@ export const useAppStore = create<AppState>()(
         })),
       toggleTask: (id) =>
         set((state) => {
-          const today = new Date().toISOString().split('T')[0];
+          const today = getTodayDate();
+          const task = state.tasks.find((t) => t.id === id);
+          const isCompletingTask = task && !task.isCompleted;
+
+          // Update stats if completing a task
+          let newStatsByDate = state.statsByDate;
+          if (isCompletingTask) {
+            const existing = state.statsByDate[today] || {
+              date: today,
+              pomodoros: 0,
+              completedTasks: 0,
+              hasNote: false,
+            };
+            newStatsByDate = {
+              ...state.statsByDate,
+              [today]: {
+                ...existing,
+                completedTasks: existing.completedTasks + 1,
+              },
+            };
+          }
+
           return {
-            tasks: state.tasks.map((task) =>
-              task.id === id
+            tasks: state.tasks.map((t) =>
+              t.id === id
                 ? {
-                    ...task,
-                    isCompleted: !task.isCompleted,
-                    completedAt: !task.isCompleted ? today : undefined,
+                    ...t,
+                    isCompleted: !t.isCompleted,
+                    completedAt: !t.isCompleted ? today : undefined,
                   }
-                : task
+                : t
             ),
             // Clear currentTaskId if we're completing the current task
             currentTaskId:
-              state.currentTaskId === id && !state.tasks.find((t) => t.id === id)?.isCompleted
+              state.currentTaskId === id && !task?.isCompleted
                 ? null
                 : state.currentTaskId,
+            statsByDate: newStatsByDate,
           };
         }),
       deleteTask: (id) =>
@@ -158,14 +256,36 @@ export const useAppStore = create<AppState>()(
         })),
       completeTask: (id) =>
         set((state) => {
-          const today = new Date().toISOString().split('T')[0];
+          const today = getTodayDate();
+          const task = state.tasks.find((t) => t.id === id);
+          const isCompletingTask = task && !task.isCompleted;
+
+          // Update stats if completing a task
+          let newStatsByDate = state.statsByDate;
+          if (isCompletingTask) {
+            const existing = state.statsByDate[today] || {
+              date: today,
+              pomodoros: 0,
+              completedTasks: 0,
+              hasNote: false,
+            };
+            newStatsByDate = {
+              ...state.statsByDate,
+              [today]: {
+                ...existing,
+                completedTasks: existing.completedTasks + 1,
+              },
+            };
+          }
+
           return {
-            tasks: state.tasks.map((task) =>
-              task.id === id
-                ? { ...task, isCompleted: true, completedAt: today }
-                : task
+            tasks: state.tasks.map((t) =>
+              t.id === id
+                ? { ...t, isCompleted: true, completedAt: today }
+                : t
             ),
             currentTaskId: state.currentTaskId === id ? null : state.currentTaskId,
+            statsByDate: newStatsByDate,
           };
         }),
       setShowPomodoroPopup: (show) => set({ showPomodoroPopup: show }),
@@ -187,6 +307,66 @@ export const useAppStore = create<AppState>()(
       currentUser: null,
       setIsLoggedIn: (loggedIn) => set({ isLoggedIn: loggedIn }),
       setCurrentUser: (user) => set({ currentUser: user }),
+
+      // Stats State
+      statsByDate: {},
+      recordPomodoro: () =>
+        set((state) => {
+          const today = getTodayDate();
+          const existing = state.statsByDate[today] || {
+            date: today,
+            pomodoros: 0,
+            completedTasks: 0,
+            hasNote: false,
+          };
+          return {
+            statsByDate: {
+              ...state.statsByDate,
+              [today]: {
+                ...existing,
+                pomodoros: existing.pomodoros + 1,
+              },
+            },
+          };
+        }),
+      recordTaskCompletion: () =>
+        set((state) => {
+          const today = getTodayDate();
+          const existing = state.statsByDate[today] || {
+            date: today,
+            pomodoros: 0,
+            completedTasks: 0,
+            hasNote: false,
+          };
+          return {
+            statsByDate: {
+              ...state.statsByDate,
+              [today]: {
+                ...existing,
+                completedTasks: existing.completedTasks + 1,
+              },
+            },
+          };
+        }),
+      recordNoteActivity: () =>
+        set((state) => {
+          const today = getTodayDate();
+          const existing = state.statsByDate[today] || {
+            date: today,
+            pomodoros: 0,
+            completedTasks: 0,
+            hasNote: false,
+          };
+          return {
+            statsByDate: {
+              ...state.statsByDate,
+              [today]: {
+                ...existing,
+                hasNote: true,
+              },
+            },
+          };
+        }),
     }),
     {
       name: 'focusflow-storage',
@@ -196,6 +376,7 @@ export const useAppStore = create<AppState>()(
         notes: state.notes,
         volume: state.volume,
         currentTrackIndex: state.currentTrackIndex,
+        statsByDate: state.statsByDate,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<AppState>;
