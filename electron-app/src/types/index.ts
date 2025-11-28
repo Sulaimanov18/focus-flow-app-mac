@@ -3,9 +3,10 @@ export type Tab = 'timer' | 'tasks' | 'notes' | 'music' | 'account';
 export interface Task {
   id: string;
   title: string;
-  isDone: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  isCompleted: boolean;
+  createdAt: string; // YYYY-MM-DD format
+  completedAt?: string; // YYYY-MM-DD format, only set when finished
+  spentPomodoros: number;
 }
 
 export type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';

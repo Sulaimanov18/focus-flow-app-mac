@@ -20,9 +20,15 @@ interface AppState {
 
   // Tasks State
   tasks: Task[];
+  currentTaskId: string | null;
+  showPomodoroPopup: boolean;
   addTask: (title: string) => void;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
+  setCurrentTaskId: (id: string | null) => void;
+  incrementTaskPomodoros: (id: string) => void;
+  completeTask: (id: string) => void;
+  setShowPomodoroPopup: (show: boolean) => void;
 
   // Notes State
   notes: string;
@@ -101,6 +107,8 @@ export const useAppStore = create<AppState>()(
 
       // Tasks State
       tasks: [],
+      currentTaskId: null,
+      showPomodoroPopup: false,
       addTask: (title) =>
         set((state) => ({
           tasks: [
@@ -108,24 +116,59 @@ export const useAppStore = create<AppState>()(
             {
               id: crypto.randomUUID(),
               title,
-              isDone: false,
-              createdAt: new Date(),
-              updatedAt: new Date(),
+              isCompleted: false,
+              createdAt: new Date().toISOString().split('T')[0],
+              spentPomodoros: 0,
             },
           ],
         })),
       toggleTask: (id) =>
-        set((state) => ({
-          tasks: state.tasks.map((task) =>
-            task.id === id
-              ? { ...task, isDone: !task.isDone, updatedAt: new Date() }
-              : task
-          ),
-        })),
+        set((state) => {
+          const today = new Date().toISOString().split('T')[0];
+          return {
+            tasks: state.tasks.map((task) =>
+              task.id === id
+                ? {
+                    ...task,
+                    isCompleted: !task.isCompleted,
+                    completedAt: !task.isCompleted ? today : undefined,
+                  }
+                : task
+            ),
+            // Clear currentTaskId if we're completing the current task
+            currentTaskId:
+              state.currentTaskId === id && !state.tasks.find((t) => t.id === id)?.isCompleted
+                ? null
+                : state.currentTaskId,
+          };
+        }),
       deleteTask: (id) =>
         set((state) => ({
           tasks: state.tasks.filter((task) => task.id !== id),
+          currentTaskId: state.currentTaskId === id ? null : state.currentTaskId,
         })),
+      setCurrentTaskId: (id) => set({ currentTaskId: id }),
+      incrementTaskPomodoros: (id) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === id
+              ? { ...task, spentPomodoros: task.spentPomodoros + 1 }
+              : task
+          ),
+        })),
+      completeTask: (id) =>
+        set((state) => {
+          const today = new Date().toISOString().split('T')[0];
+          return {
+            tasks: state.tasks.map((task) =>
+              task.id === id
+                ? { ...task, isCompleted: true, completedAt: today }
+                : task
+            ),
+            currentTaskId: state.currentTaskId === id ? null : state.currentTaskId,
+          };
+        }),
+      setShowPomodoroPopup: (show) => set({ showPomodoroPopup: show }),
 
       // Notes State
       notes: '',
@@ -149,6 +192,7 @@ export const useAppStore = create<AppState>()(
       name: 'focusflow-storage',
       partialize: (state) => ({
         tasks: state.tasks,
+        currentTaskId: state.currentTaskId,
         notes: state.notes,
         volume: state.volume,
         currentTrackIndex: state.currentTrackIndex,
