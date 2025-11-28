@@ -169,5 +169,8 @@ export const useAppStore = create<AppState>()(
 export const MUSIC_TRACKS: MusicTrack[] = [
   { id: '1', name: 'Holy Water', category: 'Ambient', fileName: 'holy-water' },
   { id: '2', name: 'Soft Focus', category: 'Focus', fileName: 'soft-focus' },
-  { id: '3', name: 'Deep Focus', category: 'Focus', fileName: 'deep-focus' },
+  { id: '3', name: 'Cinematic', category: 'Ambient', fileName: 'cinematic' },
+  { id: '4', name: 'Study 432Hz', category: 'Focus', fileName: 'study-music' },
+  { id: '5', name: 'Lofi Focus', category: 'Lofi', fileName: 'lofi-focus' },
+  { id: '6', name: 'Ambient Piano', category: 'Focus', fileName: 'ambient-piano' },
 ];
