@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useAppStore, MUSIC_TRACKS } from '../../stores/useAppStore';
 import { audioPlayer } from '../../services/audioPlayer';
 
@@ -13,19 +12,6 @@ export function MusicView() {
   } = useAppStore();
 
   const currentTrack = MUSIC_TRACKS[currentTrackIndex];
-
-  // Sync audio player with state - NO cleanup that stops audio
-  useEffect(() => {
-    if (isPlaying) {
-      audioPlayer.play(currentTrackIndex, volume);
-    } else {
-      audioPlayer.pause();
-    }
-  }, [isPlaying, currentTrackIndex]);
-
-  useEffect(() => {
-    audioPlayer.setVolume(volume);
-  }, [volume]);
 
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);

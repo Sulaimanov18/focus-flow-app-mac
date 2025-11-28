@@ -7,9 +7,10 @@ import { NotesView } from './components/Notes/NotesView';
 import { MusicView } from './components/Music/MusicView';
 import { AuthView } from './components/Auth/AuthView';
 import { CollapsedView } from './components/CollapsedView';
+import { audioPlayer } from './services/audioPlayer';
 
 function App() {
-  const { selectedTab, isCollapsed, setIsCollapsed, isLoggedIn } = useAppStore();
+  const { selectedTab, isCollapsed, setIsCollapsed, isLoggedIn, isPlaying, currentTrackIndex, volume } = useAppStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -24,6 +25,19 @@ function App() {
     };
     syncCollapsedState();
   }, [setIsCollapsed]);
+
+  // Sync audio player with state - runs at App level so it works when collapsed
+  useEffect(() => {
+    if (isPlaying) {
+      audioPlayer.play(currentTrackIndex, volume);
+    } else {
+      audioPlayer.pause();
+    }
+  }, [isPlaying, currentTrackIndex]);
+
+  useEffect(() => {
+    audioPlayer.setVolume(volume);
+  }, [volume]);
 
   if (!mounted) return null;
 
