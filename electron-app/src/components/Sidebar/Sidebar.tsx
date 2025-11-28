@@ -6,8 +6,8 @@ const tabs: { id: Tab; icon: JSX.Element; label: string }[] = [
     id: 'music',
     label: 'Music',
     icon: (
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
       </svg>
     ),
   },
@@ -15,8 +15,8 @@ const tabs: { id: Tab; icon: JSX.Element; label: string }[] = [
     id: 'timer',
     label: 'Timer',
     icon: (
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },
@@ -24,8 +24,9 @@ const tabs: { id: Tab; icon: JSX.Element; label: string }[] = [
     id: 'tasks',
     label: 'Tasks',
     icon: (
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
       </svg>
     ),
   },
@@ -33,8 +34,8 @@ const tabs: { id: Tab; icon: JSX.Element; label: string }[] = [
     id: 'notes',
     label: 'Notes',
     icon: (
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M3 18h12v-2H3v2zM3 6v2h18V6H3zm0 7h18v-2H3v2z" />
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
       </svg>
     ),
   },
@@ -42,8 +43,8 @@ const tabs: { id: Tab; icon: JSX.Element; label: string }[] = [
     id: 'account',
     label: 'Account',
     icon: (
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
       </svg>
     ),
   },
@@ -53,21 +54,37 @@ export function Sidebar() {
   const { selectedTab, setSelectedTab } = useAppStore();
 
   return (
-    <div className="w-16 h-full bg-black/20 flex flex-col items-center py-4 gap-2">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => setSelectedTab(tab.id)}
-          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
-            selectedTab === tab.id
-              ? 'bg-accent text-white shadow-lg shadow-accent/30'
-              : 'text-white/50 hover:bg-white/10 hover:text-white/80'
-          }`}
-          title={tab.label}
-        >
-          {tab.icon}
-        </button>
-      ))}
+    <div className="w-20 h-full bg-black/30 flex flex-col items-center py-4 border-r border-white/5">
+      {/* App Logo */}
+      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center mb-6 shadow-lg">
+        <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="8" r="2.5" />
+          <circle cx="7" cy="12" r="2.5" />
+          <circle cx="17" cy="12" r="2.5" />
+          <circle cx="9" cy="17" r="2.5" />
+          <circle cx="15" cy="17" r="2.5" />
+          <circle cx="12" cy="12" r="2.5" />
+        </svg>
+      </div>
+
+      {/* Navigation tabs */}
+      <div className="flex flex-col items-center gap-1 flex-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setSelectedTab(tab.id)}
+            className={`w-16 py-2.5 rounded-xl flex flex-col items-center gap-1 transition-all duration-200 ${
+              selectedTab === tab.id
+                ? 'bg-rose-500/20 text-rose-400'
+                : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+            }`}
+            title={tab.label}
+          >
+            {tab.icon}
+            <span className="text-[10px] font-medium">{tab.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

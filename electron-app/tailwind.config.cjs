@@ -1,8 +1,10 @@
+const path = require('path');
+
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    path.join(__dirname, "./index.html"),
+    path.join(__dirname, "./src/**/*.{js,ts,jsx,tsx}"),
   ],
   theme: {
     extend: {
@@ -11,9 +13,6 @@ export default {
           DEFAULT: '#6366f1',
           hover: '#5558e3',
         },
-      },
-      animation: {
-        'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
     },
   },

@@ -15,6 +15,7 @@ export interface TimerState {
   secondsLeft: number;
   isRunning: boolean;
   completedPomodoros: number;
+  targetEndTime: number | null;
 }
 
 export interface MusicTrack {

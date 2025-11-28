@@ -38,10 +38,18 @@ function App() {
       case 'music':
         return <MusicView />;
       case 'account':
-        return isLoggedIn ? <div>Account Settings</div> : <AuthView />;
+        return isLoggedIn ? <div className="p-4 text-white/60">Account Settings</div> : <AuthView />;
       default:
         return <TimerView />;
     }
+  };
+
+  const tabTitles: Record<string, string> = {
+    timer: 'Timer',
+    tasks: 'Tasks',
+    notes: 'Notes',
+    music: 'Music',
+    account: 'Account',
   };
 
   // Collapsed mini player view
@@ -55,67 +63,53 @@ function App() {
 
   // Expanded full view
   return (
-    <div className="w-full h-full rounded-2xl bg-neutral-900/95 backdrop-blur-xl overflow-hidden border border-white/10 shadow-2xl">
-      <div className="flex h-full">
-        {/* Sidebar */}
-        <Sidebar />
+    <div className="w-full h-full rounded-2xl bg-neutral-900/90 backdrop-blur-xl overflow-hidden border border-white/10 shadow-2xl flex">
+      {/* Sidebar */}
+      <Sidebar />
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header with drag region */}
-          <Header />
-
-          {/* Divider */}
-          <div className="mx-4 h-px bg-white/10" />
-
-          {/* Tab content */}
-          <div className="flex-1 overflow-hidden">
-            {renderContent()}
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header with traffic lights area and title */}
+        <div className="drag-region flex items-center justify-between px-4 py-3 border-b border-white/5">
+          {/* Traffic lights placeholder (macOS will show them here) */}
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1.5 mr-3">
+              <div className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500/80 hover:bg-green-500"></div>
+            </div>
+            <h1 className="text-sm font-semibold text-white/90">
+              {tabTitles[selectedTab]}
+            </h1>
           </div>
+
+          {/* Collapse button */}
+          <button
+            onClick={async () => {
+              if (window.electronAPI) {
+                const collapsed = await window.electronAPI.toggleCollapse();
+                setIsCollapsed(collapsed);
+              }
+            }}
+            className="no-drag w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+          >
+            <svg
+              className="w-3 h-3 text-white/60"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Tab content */}
+        <div className="flex-1 overflow-hidden">
+          {renderContent()}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Header() {
-  const { selectedTab, setIsCollapsed } = useAppStore();
-
-  const tabTitles: Record<string, string> = {
-    timer: 'Timer',
-    tasks: 'Tasks',
-    notes: 'Notes',
-    music: 'Music',
-    account: 'Account',
-  };
-
-  const handleCollapse = async () => {
-    if (window.electronAPI) {
-      const collapsed = await window.electronAPI.toggleCollapse();
-      setIsCollapsed(collapsed);
-    }
-  };
-
-  return (
-    <div className="drag-region flex items-center justify-between px-4 py-3">
-      <h1 className="text-sm font-semibold text-white/90">
-        {tabTitles[selectedTab]}
-      </h1>
-
-      <button
-        onClick={handleCollapse}
-        className="no-drag w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-      >
-        <svg
-          className="w-2.5 h-2.5 text-white/60"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={3}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-        </svg>
-      </button>
     </div>
   );
 }

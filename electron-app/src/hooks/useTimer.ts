@@ -8,31 +8,32 @@ export function useTimer() {
     setTimerSeconds,
     setTimerRunning,
     setTimerMode,
+    setTargetEndTime,
     incrementPomodoros,
     resetTimer,
   } = useAppStore();
 
-  const targetEndTimeRef = useRef<number | null>(null);
   const intervalRef = useRef<number | null>(null);
 
   const start = useCallback(() => {
     if (timer.isRunning) return;
 
-    targetEndTimeRef.current = Date.now() + timer.secondsLeft * 1000;
+    // Store targetEndTime in global state (persists across section switches)
+    setTargetEndTime(Date.now() + timer.secondsLeft * 1000);
     setTimerRunning(true);
-  }, [timer.isRunning, timer.secondsLeft, setTimerRunning]);
+  }, [timer.isRunning, timer.secondsLeft, setTimerRunning, setTargetEndTime]);
 
   const pause = useCallback(() => {
     if (!timer.isRunning) return;
 
-    if (targetEndTimeRef.current) {
-      const remaining = Math.max(0, (targetEndTimeRef.current - Date.now()) / 1000);
+    if (timer.targetEndTime) {
+      const remaining = Math.max(0, (timer.targetEndTime - Date.now()) / 1000);
       setTimerSeconds(Math.ceil(remaining));
     }
 
-    targetEndTimeRef.current = null;
+    setTargetEndTime(null);
     setTimerRunning(false);
-  }, [timer.isRunning, setTimerSeconds, setTimerRunning]);
+  }, [timer.isRunning, timer.targetEndTime, setTimerSeconds, setTimerRunning, setTargetEndTime]);
 
   const toggle = useCallback(() => {
     if (timer.isRunning) {
@@ -43,7 +44,6 @@ export function useTimer() {
   }, [timer.isRunning, start, pause]);
 
   const reset = useCallback(() => {
-    targetEndTimeRef.current = null;
     resetTimer();
   }, [resetTimer]);
 
@@ -61,7 +61,7 @@ export function useTimer() {
     }
   }, [timer, setTimerMode]);
 
-  // Timer tick effect
+  // Timer tick effect - uses global targetEndTime from store
   useEffect(() => {
     if (!timer.isRunning) {
       if (intervalRef.current) {
@@ -72,16 +72,16 @@ export function useTimer() {
     }
 
     intervalRef.current = window.setInterval(() => {
-      if (!targetEndTimeRef.current) return;
+      if (!timer.targetEndTime) return;
 
-      const remaining = Math.max(0, (targetEndTimeRef.current - Date.now()) / 1000);
+      const remaining = Math.max(0, (timer.targetEndTime - Date.now()) / 1000);
       const newSecondsLeft = Math.ceil(remaining);
 
       if (newSecondsLeft <= 0) {
         // Timer complete
         setTimerRunning(false);
         setTimerSeconds(0);
-        targetEndTimeRef.current = null;
+        setTargetEndTime(null);
 
         if (timer.mode === 'pomodoro') {
           incrementPomodoros();
@@ -112,7 +112,7 @@ export function useTimer() {
         intervalRef.current = null;
       }
     };
-  }, [timer.isRunning, timer.mode, setTimerSeconds, setTimerRunning, incrementPomodoros]);
+  }, [timer.isRunning, timer.mode, timer.targetEndTime, setTimerSeconds, setTimerRunning, setTargetEndTime, incrementPomodoros]);
 
   // Request notification permission
   useEffect(() => {

@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAppStore, MUSIC_TRACKS } from '../../stores/useAppStore';
+import { audioPlayer } from '../../services/audioPlayer';
 
 export function MusicView() {
   const {
@@ -11,65 +12,45 @@ export function MusicView() {
     setVolume,
   } = useAppStore();
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
   const currentTrack = MUSIC_TRACKS[currentTrackIndex];
 
+  // Sync audio player with state - NO cleanup that stops audio
   useEffect(() => {
-    // Initialize audio element
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.loop = true;
-    }
-
-    // Update source when track changes
-    audioRef.current.src = `/audio/${currentTrack.fileName}.mp3`;
-    audioRef.current.volume = volume;
-
     if (isPlaying) {
-      audioRef.current.play().catch(console.error);
+      audioPlayer.play(currentTrackIndex, volume);
+    } else {
+      audioPlayer.pause();
     }
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-    };
-  }, [currentTrackIndex]);
+  }, [isPlaying, currentTrackIndex]);
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
+    audioPlayer.setVolume(volume);
   }, [volume]);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play().catch(console.error);
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying]);
 
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
   };
 
   const nextTrack = () => {
-    setCurrentTrackIndex((currentTrackIndex + 1) % MUSIC_TRACKS.length);
+    const newIndex = (currentTrackIndex + 1) % MUSIC_TRACKS.length;
+    setCurrentTrackIndex(newIndex);
+    if (isPlaying) {
+      audioPlayer.changeTrack(newIndex, volume, true);
+    }
   };
 
   const prevTrack = () => {
-    setCurrentTrackIndex(
-      (currentTrackIndex - 1 + MUSIC_TRACKS.length) % MUSIC_TRACKS.length
-    );
+    const newIndex = (currentTrackIndex - 1 + MUSIC_TRACKS.length) % MUSIC_TRACKS.length;
+    setCurrentTrackIndex(newIndex);
+    if (isPlaying) {
+      audioPlayer.changeTrack(newIndex, volume, true);
+    }
   };
 
   const selectTrack = (index: number) => {
     setCurrentTrackIndex(index);
     setIsPlaying(true);
+    audioPlayer.changeTrack(index, volume, true);
   };
 
   return (

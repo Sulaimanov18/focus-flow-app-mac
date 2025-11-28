@@ -14,6 +14,7 @@ interface AppState {
   setTimerMode: (mode: TimerMode) => void;
   setTimerSeconds: (seconds: number) => void;
   setTimerRunning: (running: boolean) => void;
+  setTargetEndTime: (time: number | null) => void;
   incrementPomodoros: () => void;
   resetTimer: () => void;
 
@@ -57,6 +58,7 @@ export const useAppStore = create<AppState>()(
         secondsLeft: TIMER_DURATIONS.pomodoro,
         isRunning: false,
         completedPomodoros: 0,
+        targetEndTime: null,
       },
       setTimerMode: (mode) =>
         set((state) => ({
@@ -65,6 +67,7 @@ export const useAppStore = create<AppState>()(
             mode,
             secondsLeft: TIMER_DURATIONS[mode],
             isRunning: false,
+            targetEndTime: null,
           },
         })),
       setTimerSeconds: (seconds) =>
@@ -74,6 +77,10 @@ export const useAppStore = create<AppState>()(
       setTimerRunning: (running) =>
         set((state) => ({
           timer: { ...state.timer, isRunning: running },
+        })),
+      setTargetEndTime: (time) =>
+        set((state) => ({
+          timer: { ...state.timer, targetEndTime: time },
         })),
       incrementPomodoros: () =>
         set((state) => ({
@@ -88,6 +95,7 @@ export const useAppStore = create<AppState>()(
             ...state.timer,
             secondsLeft: TIMER_DURATIONS[state.timer.mode],
             isRunning: false,
+            targetEndTime: null,
           },
         })),
 
@@ -142,13 +150,18 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         tasks: state.tasks,
         notes: state.notes,
-        timer: {
-          mode: state.timer.mode,
-          completedPomodoros: state.timer.completedPomodoros,
-        },
         volume: state.volume,
         currentTrackIndex: state.currentTrackIndex,
       }),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<AppState>;
+        return {
+          ...currentState,
+          ...persisted,
+          // Always use fresh timer state (don't persist timer)
+          timer: currentState.timer,
+        };
+      },
     }
   )
 );
