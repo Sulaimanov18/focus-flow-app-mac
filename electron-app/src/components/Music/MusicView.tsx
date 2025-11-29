@@ -79,7 +79,7 @@ export function MusicView() {
       {/* Expanded mode: Player card */}
       {isExpanded && (
         <div className="relative z-10 h-full w-full flex items-center justify-center px-4 py-6 overflow-y-auto">
-          <div className="relative w-full max-w-sm rounded-2xl bg-white/[0.08] border border-white/[0.1] shadow-2xl shadow-black/50 backdrop-blur-xl px-6 py-6 flex flex-col items-center transition-all duration-300 ease-out">
+          <div className="relative w-full max-w-sm rounded-2xl frosted-glass border border-white/[0.1] shadow-2xl shadow-black/50 px-6 py-6 flex flex-col items-center transition-all duration-300 ease-out">
             {/* Collapse button */}
             <button
               onClick={() => setIsExpanded(false)}
@@ -129,7 +129,7 @@ export function MusicView() {
 
               <button
                 onClick={togglePlayPause}
-                className="w-14 h-14 rounded-full bg-accent hover:bg-accent-hover flex items-center justify-center transition-all shadow-lg shadow-accent/40"
+                className="w-14 h-14 rounded-full bg-accent hover:bg-accent-hover flex items-center justify-center transition-all shadow-lg shadow-accent/40 btn-glow-accent"
               >
                 <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
                   {isPlaying ? (

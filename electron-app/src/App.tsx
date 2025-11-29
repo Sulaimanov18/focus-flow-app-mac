@@ -67,22 +67,31 @@ function App() {
   }
 
   const renderContent = () => {
-    switch (selectedTab) {
-      case 'timer':
-        return <TimerView />;
-      case 'tasks':
-        return <TasksView />;
-      case 'notes':
-        return <NotesView />;
-      case 'music':
-        return <MusicView />;
-      case 'calendar':
-        return <CalendarView />;
-      case 'account':
-        return isLoggedIn ? <div className="p-4 text-white/60">Account Settings</div> : <AuthView />;
-      default:
-        return <TimerView />;
-    }
+    const content = (() => {
+      switch (selectedTab) {
+        case 'timer':
+          return <TimerView />;
+        case 'tasks':
+          return <TasksView />;
+        case 'notes':
+          return <NotesView />;
+        case 'music':
+          return <MusicView />;
+        case 'calendar':
+          return <CalendarView />;
+        case 'account':
+          return isLoggedIn ? <div className="p-4 text-white/60">Account Settings</div> : <AuthView />;
+        default:
+          return <TimerView />;
+      }
+    })();
+
+    // Wrap content in animated container with unique key for re-triggering animation
+    return (
+      <div key={selectedTab} className="h-full w-full page-transition">
+        {content}
+      </div>
+    );
   };
 
   const tabTitles: Record<string, string> = {

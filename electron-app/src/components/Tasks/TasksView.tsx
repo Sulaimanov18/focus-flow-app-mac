@@ -103,7 +103,7 @@ export function TasksView() {
             </div>
 
             {todaysTasks.length === 0 ? (
-              <div className="px-4 py-6 text-center">
+              <div className="mx-4 py-6 text-center rounded-xl frosted-glass-light border border-white/[0.06]">
                 <p className="text-sm text-white/30">No tasks for today</p>
                 <p className="text-xs text-white/20 mt-1">Add a task above to get started</p>
               </div>

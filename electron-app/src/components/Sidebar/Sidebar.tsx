@@ -82,9 +82,9 @@ export function Sidebar() {
           <button
             key={tab.id}
             onClick={() => setSelectedTab(tab.id)}
-            className={`w-16 py-2.5 rounded-xl flex flex-col items-center gap-1 transition-all duration-200 ${
+            className={`w-16 py-2.5 rounded-xl flex flex-col items-center gap-1 transition-all duration-[180ms] ease-out ${
               selectedTab === tab.id
-                ? 'bg-rose-500/20 text-rose-400'
+                ? 'bg-rose-500/20 text-rose-400 sidebar-glow-underline'
                 : 'text-white/50 hover:bg-white/5 hover:text-white/80'
             }`}
             title={tab.label}

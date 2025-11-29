@@ -385,7 +385,7 @@ function FilterControl({ filter, onChange }: FilterControlProps) {
           className={`
             px-2.5 py-1 text-[10px] font-medium rounded-md transition-all duration-150
             ${filter === opt.id
-              ? 'bg-accent text-white shadow-sm'
+              ? 'bg-accent text-white shadow-sm filter-btn-active'
               : 'text-white/50 hover:text-white/70 hover:bg-white/[0.04]'}
           `}
         >
@@ -714,16 +714,17 @@ export function CalendarView() {
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-3 py-3">
+      <div className="flex-1 overflow-y-auto px-3 py-2 pb-8 md:pb-12">
         <div className="w-full max-w-lg mx-auto space-y-3">
           {/* Quick Navigation - Range Mode Buttons */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 frosted-glass-light rounded-xl px-3 py-2 border border-white/[0.06]">
+            {/* Left group: Today / Week / Month */}
             <div className="flex gap-1 p-0.5 bg-white/[0.04] rounded-lg">
               <button
                 onClick={handleTodayClick}
                 className={`px-3 py-1.5 text-[11px] font-medium rounded-md transition-all duration-150 ${
                   rangeMode === 'today'
-                    ? 'bg-accent text-white shadow-sm'
+                    ? 'bg-accent text-white shadow-sm filter-btn-active'
                     : 'text-white/50 hover:text-white/70 hover:bg-white/[0.04]'
                 }`}
               >
@@ -733,7 +734,7 @@ export function CalendarView() {
                 onClick={handleWeekClick}
                 className={`px-3 py-1.5 text-[11px] font-medium rounded-md transition-all duration-150 ${
                   rangeMode === 'week'
-                    ? 'bg-accent text-white shadow-sm'
+                    ? 'bg-accent text-white shadow-sm filter-btn-active'
                     : 'text-white/50 hover:text-white/70 hover:bg-white/[0.04]'
                 }`}
               >
@@ -743,13 +744,14 @@ export function CalendarView() {
                 onClick={handleMonthClick}
                 className={`px-3 py-1.5 text-[11px] font-medium rounded-md transition-all duration-150 ${
                   rangeMode === 'month'
-                    ? 'bg-accent text-white shadow-sm'
+                    ? 'bg-accent text-white shadow-sm filter-btn-active'
                     : 'text-white/50 hover:text-white/70 hover:bg-white/[0.04]'
                 }`}
               >
                 Month
               </button>
             </div>
+            {/* Right group: Filter controls */}
             <FilterControl filter={filter} onChange={setFilter} />
           </div>
 

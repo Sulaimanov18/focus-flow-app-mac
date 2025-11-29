@@ -80,14 +80,14 @@ export function TimerView() {
   return (
     <div className="h-full w-full flex flex-col relative overflow-hidden">
       {/* Scrollable, vertically centered content container */}
-      <div className="flex-1 flex flex-col items-center overflow-y-auto px-6 py-6">
-        <div className="flex flex-col items-center w-full max-w-xl my-auto">
+      <div className="flex-1 flex flex-col items-center overflow-y-auto px-6 py-4">
+        <div className="flex flex-col items-center w-full max-w-xl my-auto -mt-6">
           {/* Current task indicator - readable label above timer */}
           <div className="mb-4 w-full max-w-xs">
             {currentTask ? (
               <button
                 onClick={handleFocusPillClick}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.06] transition-colors cursor-pointer group"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl frosted-glass-light border border-white/[0.08] hover:bg-white/[0.08] transition-all duration-200 cursor-pointer group shadow-lg shadow-black/10"
               >
                 <svg className="w-3.5 h-3.5 text-accent flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="12" cy="12" r="10" fillOpacity="0.3" />
@@ -103,7 +103,7 @@ export function TimerView() {
                 </svg>
               </button>
             ) : (
-              <div className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.04]">
+              <div className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl frosted-glass-light border border-white/[0.06]">
                 <svg className="w-3.5 h-3.5 text-white/25 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="12" cy="12" r="10" fillOpacity="0.2" />
                   <circle cx="12" cy="12" r="6" fillOpacity="0.15" />
@@ -210,7 +210,7 @@ export function TimerView() {
             {/* Play/Pause */}
             <button
               onClick={timer.toggle}
-              className={`w-14 h-14 rounded-full bg-accent hover:bg-accent-hover flex items-center justify-center transition-all shadow-lg shadow-accent/30 ${
+              className={`w-14 h-14 rounded-full bg-accent hover:bg-accent-hover flex items-center justify-center transition-all shadow-lg shadow-accent/30 btn-glow-accent ${
                 timer.isRunning ? 'timer-running' : ''
               }`}
             >
