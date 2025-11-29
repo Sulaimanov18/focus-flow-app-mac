@@ -1,0 +1,205 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CRITICAL: Remove ALL outer margins for frameless window */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+
+/* Ensure the app fills the entire window with no gaps */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Drag region for window movement */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+/* No-drag for interactive elements */
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Button hover effects */
+button {
+  -webkit-app-region: no-drag;
+  transition: all 0.15s ease;
+}
+
+/* Input focus styles */
+input:focus, textarea:focus {
+  outline: none;
+}
+
+/* Prevent text selection on drag areas */
+.drag-region * {
+  user-select: none;
+}
+
+/* Animation for timer pulse */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+  }
+}
+
+.timer-running {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Page Transition Animations
+   ───────────────────────────────────────────────────────────── */
+
+@keyframes page-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.page-transition {
+  animation: page-fade-in 0.25s ease-out forwards;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Sidebar Glow Underline Animation
+   ───────────────────────────────────────────────────────────── */
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(244, 63, 94, 0.6);
+  }
+}
+
+.sidebar-glow-underline {
+  position: relative;
+}
+
+.sidebar-glow-underline::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(244, 63, 94, 0.8), transparent);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.5);
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Frosted Glass Effect
+   ───────────────────────────────────────────────────────────── */
+
+.frosted-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.frosted-glass-light {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Ambient Glow Effects for Buttons
+   ───────────────────────────────────────────────────────────── */
+
+.btn-glow-accent {
+  position: relative;
+}
+
+.btn-glow-accent::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.btn-glow-accent:hover::before,
+.btn-glow-accent.active::before {
+  opacity: 1;
+}
+
+.btn-glow-rose {
+  position: relative;
+}
+
+.btn-glow-rose::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.12) 0%, transparent 70%);
+  border-radius: inherit;
+  z-index: -1;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Filter Button Active Glow
+   ───────────────────────────────────────────────────────────── */
+
+.filter-btn-active {
+  position: relative;
+}
+
+.filter-btn-active::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, transparent 65%);
+  border-radius: 8px;
+  z-index: -1;
+}
