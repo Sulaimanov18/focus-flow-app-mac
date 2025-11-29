@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { TimerView } from '../components/Timer/TimerView';
 import {
   render,
@@ -7,6 +7,7 @@ import {
   createTestTask,
   setupStoreWithTasks,
   setupTimerState,
+  setupStats,
   showPomodoroPopup,
   getTodayDate,
 } from './testUtils';
@@ -206,6 +207,164 @@ describe('TimerView', () => {
       const dots = document.querySelectorAll('.w-2.h-2.rounded-full.bg-accent');
       expect(dots.length).toBe(4);
       expect(screen.getByText('+2')).toBeInTheDocument();
+    });
+  });
+
+  describe('Pomodoro completion popup stats', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2025-11-28T12:00:00'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('shows today stats with zero values when no activity', () => {
+      const task = createTestTask({ title: 'Test Task' });
+      setupStoreWithTasks([task], task.id);
+      showPomodoroPopup();
+
+      render(<TimerView />);
+
+      expect(screen.getByText(/Today:/)).toBeInTheDocument();
+      expect(screen.getByText(/0 pomodoros/)).toBeInTheDocument();
+      expect(screen.getByText(/0 min/)).toBeInTheDocument();
+      expect(screen.getByText(/0 tasks/)).toBeInTheDocument();
+    });
+
+    it('shows correct today stats when activity exists', () => {
+      const task = createTestTask({ title: 'Test Task' });
+      setupStoreWithTasks([task], task.id);
+      setupStats({
+        '2025-11-28': {
+          date: '2025-11-28',
+          pomodoros: 3,
+          completedTasks: 2,
+          hasNote: false,
+        },
+      });
+      showPomodoroPopup();
+
+      render(<TimerView />);
+
+      expect(screen.getByText(/3 pomodoros/)).toBeInTheDocument();
+      expect(screen.getByText(/75 min/)).toBeInTheDocument();
+      expect(screen.getByText(/2 tasks/)).toBeInTheDocument();
+    });
+
+    it('uses singular form for 1 pomodoro and 1 task', () => {
+      const task = createTestTask({ title: 'Test Task' });
+      setupStoreWithTasks([task], task.id);
+      setupStats({
+        '2025-11-28': {
+          date: '2025-11-28',
+          pomodoros: 1,
+          completedTasks: 1,
+          hasNote: false,
+        },
+      });
+      showPomodoroPopup();
+
+      render(<TimerView />);
+
+      expect(screen.getByText(/1 pomodoro(?!s)/)).toBeInTheDocument();
+      expect(screen.getByText(/1 task(?!s)/)).toBeInTheDocument();
+    });
+  });
+
+  describe('Mini daily summary', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2025-11-28T12:00:00'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('shows today stats below timer controls', () => {
+      setupStats({
+        '2025-11-28': {
+          date: '2025-11-28',
+          pomodoros: 4,
+          completedTasks: 2,
+          hasNote: false,
+        },
+      });
+
+      render(<TimerView />);
+
+      // The mini summary should show today's stats
+      expect(screen.getByText(/4 pomodoros/)).toBeInTheDocument();
+      expect(screen.getByText(/100 min/)).toBeInTheDocument();
+      expect(screen.getByText(/2 tasks/)).toBeInTheDocument();
+    });
+
+    it('shows zero stats when no activity today', () => {
+      render(<TimerView />);
+
+      expect(screen.getByText(/0 pomodoros/)).toBeInTheDocument();
+      expect(screen.getByText(/0 min/)).toBeInTheDocument();
+      expect(screen.getByText(/0 tasks/)).toBeInTheDocument();
+    });
+
+    it('shows streak when user has consecutive days of activity', () => {
+      setupStats({
+        '2025-11-28': {
+          date: '2025-11-28',
+          pomodoros: 1,
+          completedTasks: 0,
+          hasNote: false,
+        },
+        '2025-11-27': {
+          date: '2025-11-27',
+          pomodoros: 2,
+          completedTasks: 1,
+          hasNote: false,
+        },
+        '2025-11-26': {
+          date: '2025-11-26',
+          pomodoros: 3,
+          completedTasks: 0,
+          hasNote: true,
+        },
+      });
+
+      render(<TimerView />);
+
+      expect(screen.getByText(/3 day streak/)).toBeInTheDocument();
+    });
+
+    it('does not show streak when no consecutive activity', () => {
+      setupStats({
+        '2025-11-26': {
+          date: '2025-11-26',
+          pomodoros: 5,
+          completedTasks: 3,
+          hasNote: false,
+        },
+      });
+
+      render(<TimerView />);
+
+      expect(screen.queryByText(/day streak/)).not.toBeInTheDocument();
+    });
+
+    it('uses singular form for 1 pomodoro and 1 task', () => {
+      setupStats({
+        '2025-11-28': {
+          date: '2025-11-28',
+          pomodoros: 1,
+          completedTasks: 1,
+          hasNote: false,
+        },
+      });
+
+      render(<TimerView />);
+
+      expect(screen.getByText(/1 pomodoro(?!s)/)).toBeInTheDocument();
+      expect(screen.getByText(/1 task(?!s)/)).toBeInTheDocument();
     });
   });
 });
