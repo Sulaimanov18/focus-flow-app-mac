@@ -1,4 +1,4 @@
-export type Tab = 'timer' | 'tasks' | 'notes' | 'music' | 'account';
+export type Tab = 'timer' | 'tasks' | 'notes' | 'music' | 'account' | 'calendar';
 
 export interface Task {
   id: string;
@@ -62,4 +62,13 @@ export interface WeekSummary {
   pomodoros: number;
   minutes: number;
   activeDays: number;
+}
+
+// Calendar types
+export interface DaySummary {
+  date: string; // "YYYY-MM-DD"
+  pomodoros: number;
+  focusMinutes: number;
+  completedTasks: Task[];
+  hasNote: boolean;
 }

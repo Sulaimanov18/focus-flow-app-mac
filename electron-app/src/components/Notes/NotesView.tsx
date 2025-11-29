@@ -290,7 +290,15 @@ function CalendarPopover({ selectedDate, onSelectDate, onClose }: CalendarPopove
 // ─────────────────────────────────────────────────────────────
 
 export function NotesView() {
-  const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString);
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    // Check if we're navigating from Calendar with a target date
+    const targetDate = sessionStorage.getItem('notes-target-date');
+    if (targetDate) {
+      sessionStorage.removeItem('notes-target-date');
+      return targetDate;
+    }
+    return getTodayDateString();
+  });
   const [noteText, setNoteText] = useState<string>('');
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [showCalendar, setShowCalendar] = useState(false);

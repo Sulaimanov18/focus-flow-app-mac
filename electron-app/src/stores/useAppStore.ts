@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Tab, Task, TimerMode, TimerState, MusicTrack, User, TIMER_DURATIONS, DayActivity, TodaySummary, WeekSummary } from '../types';
+import { Tab, Task, TimerMode, TimerState, MusicTrack, User, TIMER_DURATIONS, DayActivity, TodaySummary, WeekSummary, DaySummary } from '../types';
 
 // Helper to get today's date as YYYY-MM-DD
 function getTodayDate(): string {
@@ -70,6 +70,34 @@ export function getWeekSummary(byDate: Record<string, DayActivity>): WeekSummary
     minutes: pomodoros * 25,
     activeDays,
   };
+}
+
+// Get summaries for all days in a given month (for Calendar)
+export function getMonthSummaries(
+  year: number,
+  month: number, // 0-based (0 = January)
+  byDate: Record<string, DayActivity>,
+  tasks: Task[],
+  hasNoteForDate: (date: string) => boolean
+): DaySummary[] {
+  const summaries: DaySummary[] = [];
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const activity = byDate[dateStr];
+    const completedTasks = tasks.filter((t) => t.completedAt === dateStr);
+
+    summaries.push({
+      date: dateStr,
+      pomodoros: activity?.pomodoros ?? 0,
+      focusMinutes: (activity?.pomodoros ?? 0) * 25,
+      completedTasks,
+      hasNote: hasNoteForDate(dateStr),
+    });
+  }
+
+  return summaries;
 }
 
 interface AppState {

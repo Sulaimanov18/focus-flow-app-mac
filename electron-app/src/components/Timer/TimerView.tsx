@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTimer } from '../../hooks/useTimer';
-import { useAppStore } from '../../stores/useAppStore';
+import { useAppStore, getTodaySummary, calculateStreak } from '../../stores/useAppStore';
 import { TimerMode, TIMER_MODE_LABELS } from '../../types';
 import { FocusStats } from './FocusStats';
 
@@ -242,6 +242,9 @@ export function TimerView() {
             </button>
           </div>
 
+          {/* Mini Daily Summary */}
+          <MiniDailySummary statsByDate={statsByDate} />
+
           {/* Focus Stats */}
           <div className="mt-8">
             <FocusStats />
@@ -250,27 +253,64 @@ export function TimerView() {
       </div>
 
       {/* Pomodoro completion popup */}
-      {showPomodoroPopup && currentTask && (
-        <PomodoroCompletionPopup
-          taskTitle={currentTask.title}
-          onAddPomodoro={handleAddPomodoro}
-          onMarkCompleted={handleMarkCompleted}
-          onSkip={handleSkip}
-        />
-      )}
+      {showPomodoroPopup && currentTask && (() => {
+        const todaySummary = getTodaySummary(statsByDate);
+        return (
+          <PomodoroCompletionPopup
+            taskTitle={currentTask.title}
+            todayPomodoros={todaySummary.pomodoros}
+            todayMinutes={todaySummary.minutes}
+            todayCompletedTasks={todaySummary.completedTasks}
+            onAddPomodoro={handleAddPomodoro}
+            onMarkCompleted={handleMarkCompleted}
+            onSkip={handleSkip}
+          />
+        );
+      })()}
     </div>
   );
 }
 
 interface PomodoroCompletionPopupProps {
   taskTitle: string;
+  todayPomodoros: number;
+  todayMinutes: number;
+  todayCompletedTasks: number;
   onAddPomodoro: () => void;
   onMarkCompleted: () => void;
   onSkip: () => void;
 }
 
+interface MiniDailySummaryProps {
+  statsByDate: Record<string, { pomodoros: number; completedTasks: number; notes: number }>;
+}
+
+function MiniDailySummary({ statsByDate }: MiniDailySummaryProps) {
+  const todaySummary = getTodaySummary(statsByDate);
+  const streak = calculateStreak(statsByDate);
+
+  return (
+    <div className="mt-5 flex items-center justify-center gap-3 text-[11px] text-white/40">
+      <span>{todaySummary.pomodoros} pomodoro{todaySummary.pomodoros !== 1 ? 's' : ''}</span>
+      <span className="text-white/20">·</span>
+      <span>{todaySummary.minutes} min</span>
+      <span className="text-white/20">·</span>
+      <span>{todaySummary.completedTasks} task{todaySummary.completedTasks !== 1 ? 's' : ''}</span>
+      {streak > 0 && (
+        <>
+          <span className="text-white/20">·</span>
+          <span className="text-accent/70">{streak} day streak</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 function PomodoroCompletionPopup({
   taskTitle,
+  todayPomodoros,
+  todayMinutes,
+  todayCompletedTasks,
   onAddPomodoro,
   onMarkCompleted,
   onSkip,
@@ -291,6 +331,13 @@ function PomodoroCompletionPopup({
           </p>
           <p className="text-xs text-white/80 mt-1 font-medium truncate px-2">
             "{taskTitle}"
+          </p>
+        </div>
+
+        {/* Today's Stats */}
+        <div className="mb-4 py-2 px-3 rounded-lg bg-white/5 border border-white/5">
+          <p className="text-[10px] text-white/40 text-center">
+            Today: {todayPomodoros} pomodoro{todayPomodoros !== 1 ? 's' : ''} · {todayMinutes} min · {todayCompletedTasks} task{todayCompletedTasks !== 1 ? 's' : ''}
           </p>
         </div>
 

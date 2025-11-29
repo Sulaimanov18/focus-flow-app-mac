@@ -6,40 +6,65 @@ import { TasksView } from './components/Tasks/TasksView';
 import { NotesView } from './components/Notes/NotesView';
 import { MusicView } from './components/Music/MusicView';
 import { AuthView } from './components/Auth/AuthView';
+import { CalendarView } from './components/Calendar/CalendarView';
 import { CollapsedView } from './components/CollapsedView';
+import { MiniWidgetView } from './components/MiniWidget/MiniWidgetView';
 import { audioPlayer } from './services/audioPlayer';
 
 function App() {
   const { selectedTab, isCollapsed, setIsCollapsed, isLoggedIn, isPlaying, currentTrackIndex, volume } = useAppStore();
   const [mounted, setMounted] = useState(false);
+  const [isMiniWidget, setIsMiniWidget] = useState(false);
 
   useEffect(() => {
     setMounted(true);
 
-    // Sync collapsed state with Electron
+    // Check if we're in mini widget mode (hash route)
+    const checkMiniMode = () => {
+      const hash = window.location.hash;
+      setIsMiniWidget(hash === '#/mini' || hash === '/mini');
+    };
+
+    checkMiniMode();
+    window.addEventListener('hashchange', checkMiniMode);
+
+    // Sync collapsed state with Electron (only for main window)
     const syncCollapsedState = async () => {
-      if (window.electronAPI) {
+      if (window.electronAPI && !isMiniWidget) {
         const collapsed = await window.electronAPI.getCollapsedState();
         setIsCollapsed(collapsed);
       }
     };
     syncCollapsedState();
-  }, [setIsCollapsed]);
+
+    return () => {
+      window.removeEventListener('hashchange', checkMiniMode);
+    };
+  }, [setIsCollapsed, isMiniWidget]);
 
   // Sync audio player with state - runs at App level so it works when collapsed
   useEffect(() => {
+    // Only sync audio in main window, not mini widget (mini widget has its own sync)
+    if (isMiniWidget) return;
+
     if (isPlaying) {
       audioPlayer.play(currentTrackIndex, volume);
     } else {
       audioPlayer.pause();
     }
-  }, [isPlaying, currentTrackIndex]);
+  }, [isPlaying, currentTrackIndex, isMiniWidget]);
 
   useEffect(() => {
+    if (isMiniWidget) return;
     audioPlayer.setVolume(volume);
-  }, [volume]);
+  }, [volume, isMiniWidget]);
 
   if (!mounted) return null;
+
+  // Mini widget view - completely separate UI
+  if (isMiniWidget) {
+    return <MiniWidgetView />;
+  }
 
   const renderContent = () => {
     switch (selectedTab) {
@@ -51,6 +76,8 @@ function App() {
         return <NotesView />;
       case 'music':
         return <MusicView />;
+      case 'calendar':
+        return <CalendarView />;
       case 'account':
         return isLoggedIn ? <div className="p-4 text-white/60">Account Settings</div> : <AuthView />;
       default:
@@ -63,6 +90,7 @@ function App() {
     tasks: 'Tasks',
     notes: 'Notes',
     music: 'Music',
+    calendar: 'Calendar',
     account: 'Account',
   };
 
