@@ -227,10 +227,10 @@ describe('TimerView', () => {
 
       render(<TimerView />);
 
-      expect(screen.getByText(/Today:/)).toBeInTheDocument();
-      expect(screen.getByText(/0 pomodoros/)).toBeInTheDocument();
-      expect(screen.getByText(/0 min/)).toBeInTheDocument();
-      expect(screen.getByText(/0 tasks/)).toBeInTheDocument();
+      expect(screen.getAllByText(/Today:/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/0 pomodoros/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/0 min/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/0 tasks/).length).toBeGreaterThan(0);
     });
 
     it('shows correct today stats when activity exists', () => {
@@ -248,9 +248,9 @@ describe('TimerView', () => {
 
       render(<TimerView />);
 
-      expect(screen.getByText(/3 pomodoros/)).toBeInTheDocument();
-      expect(screen.getByText(/75 min/)).toBeInTheDocument();
-      expect(screen.getByText(/2 tasks/)).toBeInTheDocument();
+      expect(screen.getAllByText(/3 pomodoros/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/75 min/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/2 tasks/).length).toBeGreaterThan(0);
     });
 
     it('uses singular form for 1 pomodoro and 1 task', () => {
@@ -268,8 +268,8 @@ describe('TimerView', () => {
 
       render(<TimerView />);
 
-      expect(screen.getByText(/1 pomodoro(?!s)/)).toBeInTheDocument();
-      expect(screen.getByText(/1 task(?!s)/)).toBeInTheDocument();
+      expect(screen.getAllByText(/1 pomodoro(?!s)/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/1 task(?!s)/).length).toBeGreaterThan(0);
     });
   });
 
@@ -295,18 +295,19 @@ describe('TimerView', () => {
 
       render(<TimerView />);
 
-      // The mini summary should show today's stats
-      expect(screen.getByText(/4 pomodoros/)).toBeInTheDocument();
-      expect(screen.getByText(/100 min/)).toBeInTheDocument();
-      expect(screen.getByText(/2 tasks/)).toBeInTheDocument();
+      // The mini summary should show today's stats (may appear multiple times in different sections)
+      expect(screen.getAllByText(/4 pomodoros/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/100 min/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/2 tasks/).length).toBeGreaterThan(0);
     });
 
     it('shows zero stats when no activity today', () => {
       render(<TimerView />);
 
-      expect(screen.getByText(/0 pomodoros/)).toBeInTheDocument();
-      expect(screen.getByText(/0 min/)).toBeInTheDocument();
-      expect(screen.getByText(/0 tasks/)).toBeInTheDocument();
+      // Stats appear in multiple sections (Today, Week in FocusStats + MiniDailySummary)
+      expect(screen.getAllByText(/0 pomodoros/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/0 min/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/0 tasks/).length).toBeGreaterThan(0);
     });
 
     it('shows streak when user has consecutive days of activity', () => {
