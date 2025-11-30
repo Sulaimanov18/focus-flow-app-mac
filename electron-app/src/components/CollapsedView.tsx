@@ -2,6 +2,9 @@ import { useAppStore } from '../stores/useAppStore';
 import { useTimer } from '../hooks/useTimer';
 import { TIMER_MODE_LABELS } from '../types';
 
+// Capybara app icon (use larger size for better quality)
+const appIconUrl = "/icons/capyfocus-app-64.png";
+
 export function CollapsedView() {
   const { setIsCollapsed, isPlaying, setIsPlaying } = useAppStore();
   const timer = useTimer();
@@ -19,16 +22,9 @@ export function CollapsedView() {
         {/* App icon / expand button */}
         <button
           onClick={handleExpand}
-          className="no-drag w-8 h-8 rounded-lg bg-accent/20 hover:bg-accent/30 flex items-center justify-center transition-colors"
+          className="no-drag w-10 h-10 rounded-xl hover:scale-105 flex items-center justify-center transition-all duration-200 overflow-hidden"
         >
-          <svg
-            className="w-4 h-4 text-accent"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-            <path d="M12 6l-4 4h3v4h2v-4h3l-4-4z" />
-          </svg>
+          <img src={appIconUrl} alt="CapyFocus" className="w-10 h-10 object-cover rounded-lg" />
         </button>
 
         {/* Timer display */}

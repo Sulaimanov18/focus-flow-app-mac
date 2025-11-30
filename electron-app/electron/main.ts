@@ -48,7 +48,7 @@ function createWindow(): void {
     roundedCorners: true,
 
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -121,7 +121,7 @@ function createMiniWindow(): void {
     visualEffectState: 'active',
 
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -205,8 +205,21 @@ function unregisterGlobalShortcuts(): void {
 }
 
 function createTray(): void {
-  // Create a simple tray icon (you can replace with your own icon)
-  const icon = nativeImage.createEmpty();
+  // Load the CapyFocus tray icon
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'icons', 'app', 'template', 'iconTemplate.png')
+    : path.join(__dirname, '..', 'assets', 'icons', 'app', 'template', 'iconTemplate.png');
+
+  let icon = nativeImage.createFromPath(iconPath);
+
+  // If icon failed to load, create empty one as fallback
+  if (icon.isEmpty()) {
+    icon = nativeImage.createEmpty();
+  }
+
+  // Mark as template image for macOS (adapts to dark/light mode)
+  icon.setTemplateImage(true);
+
   tray = new Tray(icon);
 
   const contextMenu = Menu.buildFromTemplate([
@@ -239,7 +252,7 @@ function createTray(): void {
     },
   ]);
 
-  tray.setToolTip('FocusFlow');
+  tray.setToolTip('CapyFocus');
   tray.setContextMenu(contextMenu);
 
   tray.on('click', () => {
