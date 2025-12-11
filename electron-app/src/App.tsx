@@ -10,23 +10,38 @@ import { CalendarView } from './components/Calendar/CalendarView';
 import { CollapsedView } from './components/CollapsedView';
 import { MiniWidgetView } from './components/MiniWidget/MiniWidgetView';
 import { audioPlayer } from './services/audioPlayer';
+import { supabase } from './services/supabase';
 
 function App() {
-  const { selectedTab, isCollapsed, setIsCollapsed, isLoggedIn, isPlaying, currentTrackIndex, volume } = useAppStore();
+  const { selectedTab, isCollapsed, setIsCollapsed, isLoggedIn, isPlaying, currentTrackIndex, volume, setAuthView, setSelectedTab } = useAppStore();
   const [mounted, setMounted] = useState(false);
   const [isMiniWidget, setIsMiniWidget] = useState(false);
 
   useEffect(() => {
     setMounted(true);
 
-    // Check if we're in mini widget mode (hash route)
-    const checkMiniMode = () => {
+    // Check if we're in mini widget mode or reset-password mode (hash route)
+    const checkHashRoute = () => {
       const hash = window.location.hash;
       setIsMiniWidget(hash === '#/mini' || hash === '/mini');
+
+      // Handle reset-password route
+      if (hash.includes('/reset-password') || hash.includes('type=recovery')) {
+        setSelectedTab('account');
+        setAuthView('reset-password');
+      }
     };
 
-    checkMiniMode();
-    window.addEventListener('hashchange', checkMiniMode);
+    checkHashRoute();
+    window.addEventListener('hashchange', checkHashRoute);
+
+    // Listen for Supabase PASSWORD_RECOVERY event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setSelectedTab('account');
+        setAuthView('reset-password');
+      }
+    });
 
     // Sync collapsed state with Electron (only for main window)
     const syncCollapsedState = async () => {
@@ -38,9 +53,10 @@ function App() {
     syncCollapsedState();
 
     return () => {
-      window.removeEventListener('hashchange', checkMiniMode);
+      window.removeEventListener('hashchange', checkHashRoute);
+      subscription.unsubscribe();
     };
-  }, [setIsCollapsed, isMiniWidget]);
+  }, [setIsCollapsed, isMiniWidget, setAuthView, setSelectedTab]);
 
   // Sync audio player with state - runs at App level so it works when collapsed
   useEffect(() => {

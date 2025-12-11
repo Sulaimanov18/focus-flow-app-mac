@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Tab, Task, TimerMode, TimerState, MusicTrack, User, TIMER_DURATIONS, DayActivity, TodaySummary, WeekSummary, DaySummary } from '../types';
 
+export type AuthView = 'login' | 'forgot-password' | 'reset-password';
+
 // Helper to get today's date as YYYY-MM-DD
 function getTodayDate(): string {
   return new Date().toISOString().split('T')[0];
@@ -127,6 +129,11 @@ interface AppState {
   incrementTaskPomodoros: (id: string) => void;
   completeTask: (id: string) => void;
   setShowPomodoroPopup: (show: boolean) => void;
+  // Subtask actions
+  addSubtask: (taskId: string, title: string) => void;
+  toggleSubtask: (taskId: string, subtaskId: string) => void;
+  deleteSubtask: (taskId: string, subtaskId: string) => void;
+  renameSubtask: (taskId: string, subtaskId: string, title: string) => void;
 
   // Notes State
   notes: string;
@@ -143,8 +150,10 @@ interface AppState {
   // Auth State
   isLoggedIn: boolean;
   currentUser: User | null;
+  authView: AuthView;
   setIsLoggedIn: (loggedIn: boolean) => void;
   setCurrentUser: (user: User | null) => void;
+  setAuthView: (view: AuthView) => void;
 
   // Stats State
   statsByDate: Record<string, DayActivity>;
@@ -318,6 +327,71 @@ export const useAppStore = create<AppState>()(
         }),
       setShowPomodoroPopup: (show) => set({ showPomodoroPopup: show }),
 
+      // Subtask actions
+      addSubtask: (taskId, title) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  subtasks: [
+                    ...(task.subtasks ?? []),
+                    {
+                      id: crypto.randomUUID(),
+                      title,
+                      isCompleted: false,
+                      createdAt: getTodayDate(),
+                    },
+                  ],
+                }
+              : task
+          ),
+        })),
+
+      toggleSubtask: (taskId, subtaskId) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  subtasks: (task.subtasks ?? []).map((subtask) =>
+                    subtask.id === subtaskId
+                      ? { ...subtask, isCompleted: !subtask.isCompleted }
+                      : subtask
+                  ),
+                }
+              : task
+          ),
+        })),
+
+      deleteSubtask: (taskId, subtaskId) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  subtasks: (task.subtasks ?? []).filter(
+                    (subtask) => subtask.id !== subtaskId
+                  ),
+                }
+              : task
+          ),
+        })),
+
+      renameSubtask: (taskId, subtaskId, title) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  subtasks: (task.subtasks ?? []).map((subtask) =>
+                    subtask.id === subtaskId ? { ...subtask, title } : subtask
+                  ),
+                }
+              : task
+          ),
+        })),
+
       // Notes State
       notes: '',
       setNotes: (notes) => set({ notes }),
@@ -333,8 +407,10 @@ export const useAppStore = create<AppState>()(
       // Auth State
       isLoggedIn: false,
       currentUser: null,
+      authView: 'login',
       setIsLoggedIn: (loggedIn) => set({ isLoggedIn: loggedIn }),
       setCurrentUser: (user) => set({ currentUser: user }),
+      setAuthView: (view) => set({ authView: view }),
 
       // Stats State
       statsByDate: {},

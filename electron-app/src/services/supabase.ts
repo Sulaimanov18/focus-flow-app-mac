@@ -33,6 +33,22 @@ export class SupabaseService {
     if (error) throw error;
   }
 
+  async resetPasswordForEmail(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/#/reset-password`,
+    });
+
+    if (error) throw error;
+  }
+
+  async updatePassword(newPassword: string) {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) throw error;
+  }
+
   async getCurrentUser(): Promise<User | null> {
     const { data: { user } } = await supabase.auth.getUser();
 
