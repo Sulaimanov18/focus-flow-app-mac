@@ -6,6 +6,9 @@ export interface ElectronAPI {
   closeMiniWidget: () => Promise<void>;
   toggleMiniWidget: () => Promise<void>;
   setAlwaysOnTop: (enabled: boolean) => Promise<boolean>;
+  // Audio helpers for dev/prod path resolution
+  getAudioPath: (fileName: string) => Promise<string>;
+  isPackaged: () => Promise<boolean>;
 }
 
 declare global {

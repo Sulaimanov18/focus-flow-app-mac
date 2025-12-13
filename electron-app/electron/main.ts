@@ -220,8 +220,8 @@ function createTray(): void {
 
   // Load both 1x (16px) and 2x (32px) images for proper retina support
   // Electron will use the appropriate one based on display scale factor
-  const icon1xPath = path.join(iconDir, 'capyfocus-focusTemplate.png');
-  const icon2xPath = path.join(iconDir, 'capyfocus-focusTemplate@2x.png');
+  const icon1xPath = path.join(iconDir, 'capyfocus-tasktimerTemplate.png');
+  const icon2xPath = path.join(iconDir, 'capyfocus-tasktimerTemplate@2x.png');
 
   console.log('Tray icon 1x path:', icon1xPath);
   console.log('Tray icon 2x path:', icon2xPath);
@@ -373,6 +373,28 @@ ipcMain.handle('set-always-on-top', (_event, enabled: boolean) => {
     miniWindow.setAlwaysOnTop(enabled);
   }
   return enabled;
+});
+
+// Audio path handler - returns correct path for both dev and packaged builds
+ipcMain.handle('get-audio-path', (_event, fileName: string) => {
+  let audioPath: string;
+
+  if (app.isPackaged) {
+    // In production, audio files are in extraResources/audio
+    // Use file:// protocol for local files in packaged app
+    const filePath = path.join(process.resourcesPath, 'audio', `${fileName}.mp3`);
+    audioPath = `file://${filePath}`;
+  } else {
+    // In development, serve from public/audio via Vite dev server
+    audioPath = `/audio/${fileName}.mp3`;
+  }
+
+  console.log(`Audio path for ${fileName}:`, audioPath, `(isPackaged: ${app.isPackaged})`);
+  return audioPath;
+});
+
+ipcMain.handle('is-packaged', () => {
+  return app.isPackaged;
 });
 
 // App lifecycle
