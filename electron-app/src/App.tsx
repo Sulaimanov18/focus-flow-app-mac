@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from './stores/useAppStore';
+import { useSettingsStore } from './stores/useSettingsStore';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { TimerView } from './components/Timer/TimerView';
 import { TasksView } from './components/Tasks/TasksView';
@@ -7,26 +8,99 @@ import { NotesView } from './components/Notes/NotesView';
 import { MusicView } from './components/Music/MusicView';
 import { AuthView } from './components/Auth/AuthView';
 import { CalendarView } from './components/Calendar/CalendarView';
+import { SettingsView } from './components/Settings/SettingsView';
 import { CollapsedView } from './components/CollapsedView';
 import { MiniWidgetView } from './components/MiniWidget/MiniWidgetView';
 import { audioPlayer } from './services/audioPlayer';
+import { supabase } from './services/supabase';
+import { backgroundSoundPlayer } from './services/backgroundSoundPlayer';
 
 function App() {
-  const { selectedTab, isCollapsed, setIsCollapsed, isLoggedIn, isPlaying, currentTrackIndex, volume } = useAppStore();
+  const { selectedTab, isCollapsed, setIsCollapsed, isLoggedIn, isPlaying, currentTrackIndex, volume, setAuthView, setSelectedTab, timer } = useAppStore();
+  const { theme, timerSize, alwaysOnTop, backgroundSound, soundVolume, autoStartSound } = useSettingsStore();
   const [mounted, setMounted] = useState(false);
   const [isMiniWidget, setIsMiniWidget] = useState(false);
+
+  // Apply theme class to body
+  useEffect(() => {
+    document.body.classList.remove('theme-soft-dark');
+    if (theme === 'soft-dark') {
+      document.body.classList.add('theme-soft-dark');
+    }
+  }, [theme]);
+
+  // Apply timer size class to body
+  useEffect(() => {
+    document.body.classList.remove('timer-large');
+    if (timerSize === 'large') {
+      document.body.classList.add('timer-large');
+    }
+  }, [timerSize]);
+
+  // Apply always on top setting via Electron IPC
+  useEffect(() => {
+    if (window.electronAPI?.setAlwaysOnTop) {
+      window.electronAPI.setAlwaysOnTop(alwaysOnTop);
+    }
+  }, [alwaysOnTop]);
+
+  // Handle background sound + auto-start when timer starts
+  useEffect(() => {
+    if (isMiniWidget) return;
+
+    // When timer starts running in pomodoro mode and autoStartSound is enabled
+    if (timer.isRunning && timer.mode === 'pomodoro' && autoStartSound && backgroundSound !== 'none') {
+      backgroundSoundPlayer.play(backgroundSound, soundVolume);
+    }
+
+    // When timer stops (either paused or completed) in pomodoro mode
+    if (!timer.isRunning && backgroundSoundPlayer.isPlaying()) {
+      backgroundSoundPlayer.pause();
+    }
+  }, [timer.isRunning, timer.mode, autoStartSound, backgroundSound, soundVolume, isMiniWidget]);
+
+  // Sync background sound volume when changed
+  useEffect(() => {
+    if (isMiniWidget) return;
+    backgroundSoundPlayer.setVolume(soundVolume);
+  }, [soundVolume, isMiniWidget]);
+
+  // Update background sound track when changed (but only play if currently playing)
+  useEffect(() => {
+    if (isMiniWidget) return;
+    if (backgroundSoundPlayer.isPlaying()) {
+      backgroundSoundPlayer.setSound(backgroundSound, soundVolume);
+      if (backgroundSound !== 'none') {
+        backgroundSoundPlayer.resume();
+      }
+    }
+  }, [backgroundSound, soundVolume, isMiniWidget]);
 
   useEffect(() => {
     setMounted(true);
 
-    // Check if we're in mini widget mode (hash route)
-    const checkMiniMode = () => {
+    // Check if we're in mini widget mode or reset-password mode (hash route)
+    const checkHashRoute = () => {
       const hash = window.location.hash;
       setIsMiniWidget(hash === '#/mini' || hash === '/mini');
+
+      // Handle reset-password route
+      if (hash.includes('/reset-password') || hash.includes('type=recovery')) {
+        setSelectedTab('account');
+        setAuthView('reset-password');
+      }
     };
 
-    checkMiniMode();
-    window.addEventListener('hashchange', checkMiniMode);
+    checkHashRoute();
+    window.addEventListener('hashchange', checkHashRoute);
+
+    // Listen for Supabase PASSWORD_RECOVERY event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setSelectedTab('account');
+        setAuthView('reset-password');
+      }
+    });
 
     // Sync collapsed state with Electron (only for main window)
     const syncCollapsedState = async () => {
@@ -38,9 +112,10 @@ function App() {
     syncCollapsedState();
 
     return () => {
-      window.removeEventListener('hashchange', checkMiniMode);
+      window.removeEventListener('hashchange', checkHashRoute);
+      subscription.unsubscribe();
     };
-  }, [setIsCollapsed, isMiniWidget]);
+  }, [setIsCollapsed, isMiniWidget, setAuthView, setSelectedTab]);
 
   // Sync audio player with state - runs at App level so it works when collapsed
   useEffect(() => {
@@ -81,6 +156,8 @@ function App() {
           return <CalendarView />;
         case 'account':
           return isLoggedIn ? <div className="p-4 text-white/60">Account Settings</div> : <AuthView />;
+        case 'settings':
+          return <SettingsView />;
         default:
           return <TimerView />;
       }
@@ -101,6 +178,7 @@ function App() {
     music: 'Music',
     calendar: 'Calendar',
     account: 'Account',
+    settings: 'Settings',
   };
 
   // Collapsed mini player view
@@ -114,7 +192,7 @@ function App() {
 
   // Expanded full view
   return (
-    <div className="w-full h-full rounded-2xl bg-neutral-900/90 backdrop-blur-xl overflow-hidden border border-white/10 shadow-2xl flex">
+    <div className="w-full h-full rounded-2xl bg-neutral-900/90 backdrop-blur-xl overflow-hidden border border-white/10 shadow-2xl flex app-container">
       {/* Sidebar */}
       <Sidebar />
 

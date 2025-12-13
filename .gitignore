@@ -1,26 +1,10 @@
-# Xcode
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
 build/
-DerivedData/
-*.xcuserstate
-*.xccheckout
-*.moved-aside
-*.hmap
-*.ipa
-*.dSYM.zip
-*.dSYM
-
-# Xcode user settings
-xcuserdata/
-*.xcworkspace/xcuserdata/
-
-# Swift Package Manager
-.build/
-Packages/
-Package.pins
-Package.resolved
-
-# CocoaPods
-Pods/
+*.app
 
 # macOS
 .DS_Store
@@ -28,10 +12,25 @@ Pods/
 .LSOverride
 ._*
 
-# Thumbnails
-Thumbs.db
-
 # IDE
 *.swp
 *.swo
 *~
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp

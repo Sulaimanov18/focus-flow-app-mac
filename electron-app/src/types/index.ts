@@ -1,4 +1,11 @@
-export type Tab = 'timer' | 'tasks' | 'notes' | 'music' | 'account' | 'calendar';
+export type Tab = 'timer' | 'tasks' | 'notes' | 'music' | 'account' | 'calendar' | 'settings';
+
+export interface Subtask {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+  createdAt: string; // YYYY-MM-DD format
+}
 
 export interface Task {
   id: string;
@@ -7,6 +14,7 @@ export interface Task {
   createdAt: string; // YYYY-MM-DD format
   completedAt?: string; // YYYY-MM-DD format, only set when finished
   spentPomodoros: number;
+  subtasks?: Subtask[]; // Optional array of subtasks
 }
 
 export type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';

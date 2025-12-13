@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Tab, Task, TimerMode, TimerState, MusicTrack, User, TIMER_DURATIONS, DayActivity, TodaySummary, WeekSummary, DaySummary } from '../types';
 
+export type AuthView = 'login' | 'forgot-password' | 'reset-password';
+
 // Helper to get today's date as YYYY-MM-DD
 function getTodayDate(): string {
   return new Date().toISOString().split('T')[0];
@@ -127,6 +129,13 @@ interface AppState {
   incrementTaskPomodoros: (id: string) => void;
   completeTask: (id: string) => void;
   setShowPomodoroPopup: (show: boolean) => void;
+  // Subtask actions
+  addSubtask: (taskId: string, title: string) => void;
+  toggleSubtask: (taskId: string, subtaskId: string) => void;
+  deleteSubtask: (taskId: string, subtaskId: string) => void;
+  renameSubtask: (taskId: string, subtaskId: string, title: string) => void;
+  // Task rename
+  renameTask: (taskId: string, title: string) => void;
 
   // Notes State
   notes: string;
@@ -143,8 +152,10 @@ interface AppState {
   // Auth State
   isLoggedIn: boolean;
   currentUser: User | null;
+  authView: AuthView;
   setIsLoggedIn: (loggedIn: boolean) => void;
   setCurrentUser: (user: User | null) => void;
+  setAuthView: (view: AuthView) => void;
 
   // Stats State
   statsByDate: Record<string, DayActivity>;
@@ -318,6 +329,132 @@ export const useAppStore = create<AppState>()(
         }),
       setShowPomodoroPopup: (show) => set({ showPomodoroPopup: show }),
 
+      // Subtask actions
+      addSubtask: (taskId, title) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  subtasks: [
+                    ...(task.subtasks ?? []),
+                    {
+                      id: crypto.randomUUID(),
+                      title,
+                      isCompleted: false,
+                      createdAt: getTodayDate(),
+                    },
+                  ],
+                }
+              : task
+          ),
+        })),
+
+      toggleSubtask: (taskId, subtaskId) =>
+        set((state) => {
+          const today = getTodayDate();
+          let newTasks = state.tasks.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  subtasks: (task.subtasks ?? []).map((subtask) =>
+                    subtask.id === subtaskId
+                      ? { ...subtask, isCompleted: !subtask.isCompleted }
+                      : subtask
+                  ),
+                }
+              : task
+          );
+
+          // Check for autoCompleteParentTask setting from settings store
+          // We'll import this check at runtime to avoid circular dependency
+          const settingsStr = localStorage.getItem('focusflow-settings');
+          let autoCompleteParent = false;
+          if (settingsStr) {
+            try {
+              const settings = JSON.parse(settingsStr);
+              autoCompleteParent = settings?.state?.autoCompleteParentTask ?? false;
+            } catch {
+              // ignore parse error
+            }
+          }
+
+          // If autoCompleteParentTask is enabled, check if all subtasks are now completed
+          if (autoCompleteParent) {
+            const parentTask = newTasks.find((t) => t.id === taskId);
+            if (parentTask && !parentTask.isCompleted) {
+              const subtasks = parentTask.subtasks ?? [];
+              const allCompleted = subtasks.length > 0 && subtasks.every((s) => s.isCompleted);
+              if (allCompleted) {
+                // Update stats for task completion
+                const existing = state.statsByDate[today] || {
+                  date: today,
+                  pomodoros: 0,
+                  completedTasks: 0,
+                  hasNote: false,
+                };
+                const newStatsByDate = {
+                  ...state.statsByDate,
+                  [today]: {
+                    ...existing,
+                    completedTasks: existing.completedTasks + 1,
+                  },
+                };
+
+                // Auto-complete the parent task
+                newTasks = newTasks.map((t) =>
+                  t.id === taskId
+                    ? { ...t, isCompleted: true, completedAt: today }
+                    : t
+                );
+
+                return {
+                  tasks: newTasks,
+                  currentTaskId: state.currentTaskId === taskId ? null : state.currentTaskId,
+                  statsByDate: newStatsByDate,
+                };
+              }
+            }
+          }
+
+          return { tasks: newTasks };
+        }),
+
+      deleteSubtask: (taskId, subtaskId) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  subtasks: (task.subtasks ?? []).filter(
+                    (subtask) => subtask.id !== subtaskId
+                  ),
+                }
+              : task
+          ),
+        })),
+
+      renameSubtask: (taskId, subtaskId, title) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  subtasks: (task.subtasks ?? []).map((subtask) =>
+                    subtask.id === subtaskId ? { ...subtask, title } : subtask
+                  ),
+                }
+              : task
+          ),
+        })),
+
+      renameTask: (taskId, title) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId ? { ...task, title } : task
+          ),
+        })),
+
       // Notes State
       notes: '',
       setNotes: (notes) => set({ notes }),
@@ -333,8 +470,10 @@ export const useAppStore = create<AppState>()(
       // Auth State
       isLoggedIn: false,
       currentUser: null,
+      authView: 'login',
       setIsLoggedIn: (loggedIn) => set({ isLoggedIn: loggedIn }),
       setCurrentUser: (user) => set({ currentUser: user }),
+      setAuthView: (view) => set({ authView: view }),
 
       // Stats State
       statsByDate: {},

@@ -2,6 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────
+   Theme CSS Variables
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Dark theme (default) */
+  --bg-primary: rgba(23, 23, 23, 0.9);
+  --bg-secondary: rgba(38, 38, 38, 0.95);
+  --bg-tertiary: rgba(64, 64, 64, 0.8);
+  --text-primary: rgba(255, 255, 255, 0.9);
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --text-tertiary: rgba(255, 255, 255, 0.4);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+
+  /* Timer sizes */
+  --timer-size: 180px;
+  --timer-radius: 70;
+  --timer-stroke: 8;
+  --timer-font-size: 2.25rem;
+}
+
+/* Soft-dark theme - reduced contrast, warmer tones */
+body.theme-soft-dark {
+  --bg-primary: rgba(30, 28, 32, 0.92);
+  --bg-secondary: rgba(45, 42, 50, 0.95);
+  --bg-tertiary: rgba(70, 65, 78, 0.8);
+  --text-primary: rgba(245, 240, 250, 0.88);
+  --text-secondary: rgba(220, 215, 230, 0.55);
+  --text-tertiary: rgba(200, 195, 210, 0.35);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+}
+
+/* Large timer size */
+body.timer-large {
+  --timer-size: 220px;
+  --timer-radius: 86;
+  --timer-stroke: 10;
+  --timer-font-size: 3rem;
+}
+
+/* Theme-specific app container styling */
+body.theme-soft-dark .app-container {
+  background: rgba(30, 28, 32, 0.92) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* CRITICAL: Remove ALL outer margins for frameless window */
 html, body, #root {
   margin: 0;
@@ -202,4 +250,48 @@ input:focus, textarea:focus {
   background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, transparent 65%);
   border-radius: 8px;
   z-index: -1;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Capybara Breathing Animation (Focus Mode)
+   ───────────────────────────────────────────────────────────── */
+
+.capy-breathing-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capy-breathing-wrap > * {
+  position: relative;
+  z-index: 1;
+}
+
+.capy-breathing-wrap.is-breathing::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 16px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(244, 63, 94, 0.55) 0%,
+    rgba(251, 113, 133, 0.25) 45%,
+    rgba(244, 63, 94, 0.00) 75%
+  );
+  filter: blur(12px);
+  animation: capyBreath 3s ease-in-out infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes capyBreath {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.18;
+  }
+  50% {
+    transform: scale(1.10);
+    opacity: 0.42;
+  }
 }
