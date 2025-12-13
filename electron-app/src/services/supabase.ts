@@ -1,10 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 import { Task, User } from '../types';
 
-const SUPABASE_URL = 'https://ruurweewhfxzhvrhrcig.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1dXJ3ZWV3aGZ4emh2cmhyY2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNTk2MTEsImV4cCI6MjA3OTgzNTYxMX0.a6WWSop-WtFcy0G_dHE4zIxVXKeV61Yd7Nrb5oQYRG4';
+const SUPABASE_URL = 'https://arywfvsmpmdphnbfzltu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyeXdmdnNtcG1kcGhuYmZ6bHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODI3MTMsImV4cCI6MjA4MDA1ODcxM30.dXwd3pXNydOwJ5ho5RbBxwnDqg5-_3digHxuUEuSALI';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// For Electron apps, we need to handle auth state persistence properly
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    // Use localStorage for session storage in Electron
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+  },
+});
 
 export class SupabaseService {
   // Authentication
@@ -34,8 +43,13 @@ export class SupabaseService {
   }
 
   async resetPasswordForEmail(email: string) {
+    // For Electron apps, use localhost:5173 for dev or a proper web URL for prod
+    // The redirect URL must be whitelisted in Supabase dashboard under
+    // Authentication > URL Configuration > Redirect URLs
+    const redirectUrl = 'http://localhost:5173/#/reset-password';
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/#/reset-password`,
+      redirectTo: redirectUrl,
     });
 
     if (error) throw error;

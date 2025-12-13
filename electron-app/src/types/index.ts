@@ -1,4 +1,4 @@
-export type Tab = 'timer' | 'tasks' | 'notes' | 'music' | 'account' | 'calendar';
+export type Tab = 'timer' | 'tasks' | 'notes' | 'music' | 'account' | 'calendar' | 'settings';
 
 export interface Subtask {
   id: string;

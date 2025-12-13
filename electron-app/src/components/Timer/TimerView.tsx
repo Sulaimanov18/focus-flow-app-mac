@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useTimer } from '../../hooks/useTimer';
 import { useAppStore, getTodaySummary, calculateStreak } from '../../stores/useAppStore';
+import { useSettingsStore } from '../../stores/useSettingsStore';
 import { TimerMode, TIMER_MODE_LABELS } from '../../types';
 import { FocusStats } from './FocusStats';
 
 export function TimerView() {
   const timer = useTimer();
   const {
-    setTimerMode,
     setSelectedTab,
     tasks,
     currentTaskId,
@@ -18,6 +18,7 @@ export function TimerView() {
     recordPomodoro,
     statsByDate,
   } = useAppStore();
+  const { timerSize, showTaskProgressInTimer, mindLockEnabled } = useSettingsStore();
 
   const prevSecondsRef = useRef(timer.secondsLeft);
 
@@ -25,6 +26,25 @@ export function TimerView() {
   const currentTask = currentTaskId
     ? tasks.find((t) => t.id === currentTaskId)
     : null;
+
+  // Calculate task progress for display
+  const getTaskProgress = () => {
+    if (!currentTask || !showTaskProgressInTimer) return null;
+    const subtasks = currentTask.subtasks ?? [];
+    if (subtasks.length === 0) return null;
+    const completed = subtasks.filter((s) => s.isCompleted).length;
+    return { completed, total: subtasks.length };
+  };
+  const taskProgress = getTaskProgress();
+
+  // Check if pause is allowed (mind lock)
+  const canPause = !mindLockEnabled || timer.mode !== 'pomodoro';
+
+  // Get timer dimensions from CSS variables
+  const isLarge = timerSize === 'large';
+  const svgSize = isLarge ? 220 : 180;
+  const radius = isLarge ? 86 : 70;
+  const strokeWidth = isLarge ? 10 : 8;
 
   // Navigate to Tasks when clicking the focus pill
   const handleFocusPillClick = () => {
@@ -74,8 +94,9 @@ export function TimerView() {
     longBreak: '#3b82f6',
   }[timer.mode];
 
-  const circumference = 2 * Math.PI * 70;
+  const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - timer.progress);
+  const center = svgSize / 2;
 
   return (
     <div className="h-full w-full flex flex-col relative overflow-hidden">
@@ -95,9 +116,14 @@ export function TimerView() {
                   <circle cx="12" cy="12" r="2" />
                 </svg>
                 <span className="text-xs text-white/50">Focusing on:</span>
-                <span className="text-xs text-white/90 font-medium truncate max-w-[160px]">
+                <span className="text-xs text-white/90 font-medium truncate max-w-[120px]">
                   {currentTask.title}
                 </span>
+                {taskProgress && (
+                  <span className="text-xs text-accent/70 font-medium">
+                    • {taskProgress.completed}/{taskProgress.total}
+                  </span>
+                )}
                 <svg className="w-3 h-3 text-white/30 flex-shrink-0 group-hover:text-white/50 transition-colors ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
@@ -115,23 +141,23 @@ export function TimerView() {
 
           {/* Timer Circle */}
           <div className="relative">
-            <svg width="180" height="180" className="transform -rotate-90">
+            <svg width={svgSize} height={svgSize} className="transform -rotate-90">
               {/* Background circle */}
               <circle
-                cx="90"
-                cy="90"
-                r="70"
+                cx={center}
+                cy={center}
+                r={radius}
                 stroke="rgba(255,255,255,0.1)"
-                strokeWidth="8"
+                strokeWidth={strokeWidth}
                 fill="none"
               />
               {/* Progress circle */}
               <circle
-                cx="90"
-                cy="90"
-                r="70"
+                cx={center}
+                cy={center}
+                r={radius}
                 stroke={progressColor}
-                strokeWidth="8"
+                strokeWidth={strokeWidth}
                 fill="none"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -142,7 +168,7 @@ export function TimerView() {
 
             {/* Time display */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-4xl font-light font-mono text-white">
+              <span className={`font-light font-mono text-white ${isLarge ? 'text-5xl' : 'text-4xl'}`}>
                 {timer.formattedTime}
               </span>
               <span className="text-xs text-white/50 mt-1">
@@ -173,7 +199,7 @@ export function TimerView() {
             {(['pomodoro', 'shortBreak', 'longBreak'] as TimerMode[]).map((mode) => (
               <button
                 key={mode}
-                onClick={() => setTimerMode(mode)}
+                onClick={() => timer.setMode(mode)}
                 className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
                   timer.mode === mode
                     ? 'bg-accent text-white'
@@ -210,17 +236,28 @@ export function TimerView() {
             {/* Play/Pause */}
             <button
               onClick={timer.toggle}
-              className={`w-14 h-14 rounded-full bg-accent hover:bg-accent-hover flex items-center justify-center transition-all shadow-lg shadow-accent/30 btn-glow-accent ${
+              disabled={timer.isRunning && !canPause}
+              title={timer.isRunning && !canPause ? 'Mind Lock enabled - pausing disabled during focus' : undefined}
+              className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg btn-glow-accent ${
                 timer.isRunning ? 'timer-running' : ''
+              } ${
+                timer.isRunning && !canPause
+                  ? 'bg-accent/50 cursor-not-allowed shadow-accent/20'
+                  : 'bg-accent hover:bg-accent-hover shadow-accent/30'
               }`}
             >
               <svg
-                className="w-6 h-6 text-white"
+                className={`w-6 h-6 ${timer.isRunning && !canPause ? 'text-white/50' : 'text-white'}`}
                 fill="currentColor"
                 viewBox="0 0 24 24"
               >
                 {timer.isRunning ? (
-                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                  !canPause ? (
+                    // Lock icon when mind lock is active
+                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+                  ) : (
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                  )
                 ) : (
                   <path d="M8 5v14l11-7z" />
                 )}

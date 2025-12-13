@@ -5,6 +5,7 @@ export interface ElectronAPI {
   minimizeWindow: () => Promise<void>;
   closeMiniWidget: () => Promise<void>;
   toggleMiniWidget: () => Promise<void>;
+  setAlwaysOnTop: (enabled: boolean) => Promise<boolean>;
 }
 
 declare global {

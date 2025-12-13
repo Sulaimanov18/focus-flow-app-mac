@@ -134,6 +134,8 @@ interface AppState {
   toggleSubtask: (taskId: string, subtaskId: string) => void;
   deleteSubtask: (taskId: string, subtaskId: string) => void;
   renameSubtask: (taskId: string, subtaskId: string, title: string) => void;
+  // Task rename
+  renameTask: (taskId: string, title: string) => void;
 
   // Notes State
   notes: string;
@@ -349,8 +351,9 @@ export const useAppStore = create<AppState>()(
         })),
 
       toggleSubtask: (taskId, subtaskId) =>
-        set((state) => ({
-          tasks: state.tasks.map((task) =>
+        set((state) => {
+          const today = getTodayDate();
+          let newTasks = state.tasks.map((task) =>
             task.id === taskId
               ? {
                   ...task,
@@ -361,8 +364,61 @@ export const useAppStore = create<AppState>()(
                   ),
                 }
               : task
-          ),
-        })),
+          );
+
+          // Check for autoCompleteParentTask setting from settings store
+          // We'll import this check at runtime to avoid circular dependency
+          const settingsStr = localStorage.getItem('focusflow-settings');
+          let autoCompleteParent = false;
+          if (settingsStr) {
+            try {
+              const settings = JSON.parse(settingsStr);
+              autoCompleteParent = settings?.state?.autoCompleteParentTask ?? false;
+            } catch {
+              // ignore parse error
+            }
+          }
+
+          // If autoCompleteParentTask is enabled, check if all subtasks are now completed
+          if (autoCompleteParent) {
+            const parentTask = newTasks.find((t) => t.id === taskId);
+            if (parentTask && !parentTask.isCompleted) {
+              const subtasks = parentTask.subtasks ?? [];
+              const allCompleted = subtasks.length > 0 && subtasks.every((s) => s.isCompleted);
+              if (allCompleted) {
+                // Update stats for task completion
+                const existing = state.statsByDate[today] || {
+                  date: today,
+                  pomodoros: 0,
+                  completedTasks: 0,
+                  hasNote: false,
+                };
+                const newStatsByDate = {
+                  ...state.statsByDate,
+                  [today]: {
+                    ...existing,
+                    completedTasks: existing.completedTasks + 1,
+                  },
+                };
+
+                // Auto-complete the parent task
+                newTasks = newTasks.map((t) =>
+                  t.id === taskId
+                    ? { ...t, isCompleted: true, completedAt: today }
+                    : t
+                );
+
+                return {
+                  tasks: newTasks,
+                  currentTaskId: state.currentTaskId === taskId ? null : state.currentTaskId,
+                  statsByDate: newStatsByDate,
+                };
+              }
+            }
+          }
+
+          return { tasks: newTasks };
+        }),
 
       deleteSubtask: (taskId, subtaskId) =>
         set((state) => ({
@@ -389,6 +445,13 @@ export const useAppStore = create<AppState>()(
                   ),
                 }
               : task
+          ),
+        })),
+
+      renameTask: (taskId, title) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId ? { ...task, title } : task
           ),
         })),
 

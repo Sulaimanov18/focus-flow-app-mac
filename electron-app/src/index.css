@@ -2,6 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────
+   Theme CSS Variables
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Dark theme (default) */
+  --bg-primary: rgba(23, 23, 23, 0.9);
+  --bg-secondary: rgba(38, 38, 38, 0.95);
+  --bg-tertiary: rgba(64, 64, 64, 0.8);
+  --text-primary: rgba(255, 255, 255, 0.9);
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --text-tertiary: rgba(255, 255, 255, 0.4);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+
+  /* Timer sizes */
+  --timer-size: 180px;
+  --timer-radius: 70;
+  --timer-stroke: 8;
+  --timer-font-size: 2.25rem;
+}
+
+/* Soft-dark theme - reduced contrast, warmer tones */
+body.theme-soft-dark {
+  --bg-primary: rgba(30, 28, 32, 0.92);
+  --bg-secondary: rgba(45, 42, 50, 0.95);
+  --bg-tertiary: rgba(70, 65, 78, 0.8);
+  --text-primary: rgba(245, 240, 250, 0.88);
+  --text-secondary: rgba(220, 215, 230, 0.55);
+  --text-tertiary: rgba(200, 195, 210, 0.35);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+}
+
+/* Large timer size */
+body.timer-large {
+  --timer-size: 220px;
+  --timer-radius: 86;
+  --timer-stroke: 10;
+  --timer-font-size: 3rem;
+}
+
+/* Theme-specific app container styling */
+body.theme-soft-dark .app-container {
+  background: rgba(30, 28, 32, 0.92) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* CRITICAL: Remove ALL outer margins for frameless window */
 html, body, #root {
   margin: 0;

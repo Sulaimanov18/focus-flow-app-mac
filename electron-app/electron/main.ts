@@ -205,20 +205,63 @@ function unregisterGlobalShortcuts(): void {
 }
 
 function createTray(): void {
-  // Load the CapyFocus tray icon
-  const iconPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'icons', 'app', 'template', 'iconTemplate.png')
-    : path.join(__dirname, '..', 'assets', 'icons', 'app', 'template', 'iconTemplate.png');
+  // Load the CapyFocus tray icon - focus ring design
+  // macOS template images: Use black pixels (#000000) with alpha for shape
+  // macOS automatically inverts colors for light/dark menu bar
+  // "Template" suffix in filename is convention, but we MUST call setTemplateImage(true)
 
-  let icon = nativeImage.createFromPath(iconPath);
+  let iconDir: string;
 
-  // If icon failed to load, create empty one as fallback
-  if (icon.isEmpty()) {
-    icon = nativeImage.createEmpty();
+  if (app.isPackaged) {
+    iconDir = path.join(process.resourcesPath, 'icons', 'menu');
+  } else {
+    iconDir = path.join(app.getAppPath(), 'assets', 'icons', 'menu');
   }
 
-  // Mark as template image for macOS (adapts to dark/light mode)
+  // Load both 1x (16px) and 2x (32px) images for proper retina support
+  // Electron will use the appropriate one based on display scale factor
+  const icon1xPath = path.join(iconDir, 'capyfocus-focusTemplate.png');
+  const icon2xPath = path.join(iconDir, 'capyfocus-focusTemplate@2x.png');
+
+  console.log('Tray icon 1x path:', icon1xPath);
+  console.log('Tray icon 2x path:', icon2xPath);
+
+  // Create icon from the 1x image first
+  let icon = nativeImage.createFromPath(icon1xPath);
+
+  if (icon.isEmpty()) {
+    console.error('Failed to load tray icon from:', icon1xPath);
+    // Create a fallback empty icon
+    icon = nativeImage.createEmpty();
+  } else {
+    console.log('Tray icon 1x loaded. Size:', icon.getSize());
+
+    // Add the @2x representation for retina displays
+    // This is the key to crisp icons on retina Macs
+    const icon2x = nativeImage.createFromPath(icon2xPath);
+    if (!icon2x.isEmpty()) {
+      console.log('Tray icon 2x loaded. Size:', icon2x.getSize());
+      // Add 2x representation with scale factor 2
+      icon.addRepresentation({
+        scaleFactor: 2.0,
+        width: 32,
+        height: 32,
+        buffer: icon2x.toPNG(),
+      });
+    }
+  }
+
+  // DO NOT resize - use the images at their native sizes (16px and 32px@2x)
+  // resize() creates issues with template images
+
+  // CRITICAL: Set template flag AFTER all representations are added
+  // This tells macOS to treat the icon as a template (auto-invert for dark/light mode)
   icon.setTemplateImage(true);
+
+  // Debug logging
+  console.log('Final icon isEmpty:', icon.isEmpty());
+  console.log('Final icon size:', icon.getSize());
+  console.log('Final icon isTemplateImage:', icon.isTemplateImage());
 
   tray = new Tray(icon);
 
@@ -320,6 +363,16 @@ ipcMain.handle('close-mini-widget', () => {
 
 ipcMain.handle('toggle-mini-widget', () => {
   toggleMiniWidget();
+});
+
+ipcMain.handle('set-always-on-top', (_event, enabled: boolean) => {
+  if (mainWindow) {
+    mainWindow.setAlwaysOnTop(enabled);
+  }
+  if (miniWindow) {
+    miniWindow.setAlwaysOnTop(enabled);
+  }
+  return enabled;
 });
 
 // App lifecycle

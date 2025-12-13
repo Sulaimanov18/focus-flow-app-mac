@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <!-- CapyFocus Menu Bar Icon - Focus Ring / Target -->
+  <!-- Bold stroke for readability at 16px -->
+  <!-- Template image: black with alpha, macOS auto-inverts for dark/light mode -->
+
+  <!-- Outer ring - bold 2.5px stroke -->
+  <circle cx="8" cy="8" r="6.5" fill="none" stroke="black" stroke-width="2.5"/>
+
+  <!-- Center dot - solid filled, 3px diameter -->
+  <circle cx="8" cy="8" r="2.5" fill="black"/>
+</svg>
