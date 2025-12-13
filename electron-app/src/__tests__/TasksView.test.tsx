@@ -98,11 +98,14 @@ describe('TasksView', () => {
       // Initially in Today's Tasks
       expect(screen.getByText('Task to complete')).toBeInTheDocument();
 
-      // Click the checkbox button - find it near the task title
-      const taskRow = screen.getByText('Task to complete').closest('div[class*="flex items-center gap-3"]');
-      const checkbox = taskRow?.querySelector('button') as HTMLElement;
-      if (checkbox) {
-        await user.click(checkbox);
+      // Find all buttons in the task card - the checkbox is the second button (after expand chevron)
+      const taskTitle = screen.getByText('Task to complete');
+      const taskCard = taskTitle.closest('div[class*="rounded-xl"]');
+      const buttons = taskCard?.querySelectorAll('button') as NodeListOf<HTMLElement>;
+      // The checkbox button is at index 1 (after the expand chevron at index 0)
+      const checkboxButton = buttons?.[1];
+      if (checkboxButton) {
+        await user.click(checkboxButton);
       }
 
       const state = useAppStore.getState();
@@ -119,9 +122,18 @@ describe('TasksView', () => {
       });
       setupStoreWithTasks([task]);
 
-      render(<TasksView />);
+      const { user } = render(<TasksView />);
 
+      // The "Completed Today" section header should be visible
       expect(screen.getByText(/Completed Today/)).toBeInTheDocument();
+
+      // The section is collapsed by default, so click to expand it
+      const completedHeader = screen.getByText(/Completed Today/).closest('button');
+      if (completedHeader) {
+        await user.click(completedHeader);
+      }
+
+      // Now the completed task should be visible
       expect(screen.getByText('Completed task')).toBeInTheDocument();
     });
 
@@ -144,7 +156,14 @@ describe('TasksView', () => {
 
       render(<TasksView />);
 
-      expect(screen.getByText('Completed Today (2)')).toBeInTheDocument();
+      // The SectionHeader shows title and count separately, not combined
+      expect(screen.getByText(/Completed Today/)).toBeInTheDocument();
+      // The count is in a separate span element showing "2"
+      const completedHeader = screen.getByText(/Completed Today/).closest('button');
+      expect(completedHeader).toBeInTheDocument();
+      // Find the count badge within the header
+      const countBadge = completedHeader?.querySelector('span[class*="rounded-full"]');
+      expect(countBadge?.textContent).toBe('2');
     });
   });
 
