@@ -4,6 +4,15 @@ import { Tab } from '../../types';
 // Capybara app icon (keep for branding/logo)
 const appIconUrl = "/icons/capyfocus-app-64.png";
 
+// Check if actively focusing (timer running in pomodoro/focus mode with time remaining)
+// Uses individual selectors to ensure proper re-renders when timer state changes
+function useIsFocusingActive(): boolean {
+  const isRunning = useAppStore((state) => state.timer.isRunning);
+  const mode = useAppStore((state) => state.timer.mode);
+  const secondsLeft = useAppStore((state) => state.timer.secondsLeft);
+  return isRunning && mode === 'pomodoro' && secondsLeft > 0;
+}
+
 const tabs: { id: Tab; icon: JSX.Element; label: string }[] = [
   {
     id: 'music',
@@ -73,13 +82,17 @@ const tabs: { id: Tab; icon: JSX.Element; label: string }[] = [
 
 export function Sidebar() {
   const { selectedTab, setSelectedTab } = useAppStore();
+  const isFocusingActive = useIsFocusingActive();
 
   return (
     <div className="w-20 h-full bg-black/30 flex flex-col items-center py-4 border-r border-white/5">
-      {/* App Logo */}
-      <div className="w-12 h-12 rounded-xl overflow-hidden mb-6 shadow-lg">
-        <img src={appIconUrl} alt="CapyFocus" className="w-full h-full object-cover" />
+      {/* App Logo with breathing animation when focusing */}
+      <div className={`capy-breathing-wrap ${isFocusingActive ? 'is-breathing' : ''}`}>
+        <div className="w-12 h-12 rounded-xl overflow-hidden shadow-lg relative z-10">
+          <img src={appIconUrl} alt="CapyFocus" className="w-full h-full object-cover" />
+        </div>
       </div>
+      <div className="mb-6" />
 
       {/* Navigation tabs */}
       <div className="flex flex-col items-center gap-1 flex-1">

@@ -9,6 +9,9 @@ export function CollapsedView() {
   const { setIsCollapsed, isPlaying, setIsPlaying } = useAppStore();
   const timer = useTimer();
 
+  // Check if actively focusing (timer running in pomodoro/focus mode with time remaining)
+  const isBreathing = timer.isRunning && timer.mode === 'pomodoro' && timer.secondsLeft > 0;
+
   const handleExpand = async () => {
     if (window.electronAPI) {
       const collapsed = await window.electronAPI.toggleCollapse();
@@ -19,10 +22,10 @@ export function CollapsedView() {
   return (
     <div className="w-full h-full rounded-lg bg-neutral-900/95 backdrop-blur-xl border border-white/10 shadow-xl">
       <div className="drag-region flex items-center justify-between h-full px-4">
-        {/* App icon / expand button */}
+        {/* App icon / expand button with breathing animation */}
         <button
           onClick={handleExpand}
-          className="no-drag w-10 h-10 rounded-xl hover:scale-105 flex items-center justify-center transition-all duration-200 overflow-hidden"
+          className={`no-drag w-10 h-10 rounded-xl hover:scale-105 flex items-center justify-center transition-all duration-200 overflow-visible capy-breathing-wrap ${isBreathing ? 'is-breathing' : ''}`}
         >
           <img src={appIconUrl} alt="CapyFocus" className="w-10 h-10 object-cover rounded-lg" />
         </button>

@@ -251,3 +251,47 @@ input:focus, textarea:focus {
   border-radius: 8px;
   z-index: -1;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Capybara Breathing Animation (Focus Mode)
+   ───────────────────────────────────────────────────────────── */
+
+.capy-breathing-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capy-breathing-wrap > * {
+  position: relative;
+  z-index: 1;
+}
+
+.capy-breathing-wrap.is-breathing::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 16px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(244, 63, 94, 0.55) 0%,
+    rgba(251, 113, 133, 0.25) 45%,
+    rgba(244, 63, 94, 0.00) 75%
+  );
+  filter: blur(12px);
+  animation: capyBreath 3s ease-in-out infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes capyBreath {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.18;
+  }
+  50% {
+    transform: scale(1.10);
+    opacity: 0.42;
+  }
+}
