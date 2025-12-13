@@ -1,6 +1,22 @@
 // Global audio player singleton - persists across component unmounts
 import { MUSIC_TRACKS } from '../stores/useAppStore';
 
+// Helper to get audio path - works in both dev and packaged builds
+async function getAudioPath(fileName: string): Promise<string> {
+  // Check if we're in Electron with the API available
+  if (window.electronAPI?.getAudioPath) {
+    try {
+      const audioPath = await window.electronAPI.getAudioPath(fileName);
+      console.log(`[AudioPlayer] Got path for ${fileName}:`, audioPath);
+      return audioPath;
+    } catch (error) {
+      console.error(`[AudioPlayer] Error getting audio path for ${fileName}:`, error);
+    }
+  }
+  // Fallback for dev mode or if API not available
+  return `/audio/${fileName}.mp3`;
+}
+
 class AudioPlayer {
   private audio: HTMLAudioElement | null = null;
   private currentTrackIndex: number = 0;
@@ -13,13 +29,14 @@ class AudioPlayer {
     return this.audio;
   }
 
-  play(trackIndex: number, volume: number): void {
+  async play(trackIndex: number, volume: number): Promise<void> {
     const audio = this.getAudio();
 
     // Only change source if track changed
     if (trackIndex !== this.currentTrackIndex || !audio.src.includes(MUSIC_TRACKS[trackIndex].fileName)) {
       this.currentTrackIndex = trackIndex;
-      audio.src = `/audio/${MUSIC_TRACKS[trackIndex].fileName}.mp3`;
+      const audioPath = await getAudioPath(MUSIC_TRACKS[trackIndex].fileName);
+      audio.src = audioPath;
     }
 
     audio.volume = volume;
@@ -38,10 +55,11 @@ class AudioPlayer {
     }
   }
 
-  changeTrack(trackIndex: number, volume: number, shouldPlay: boolean): void {
+  async changeTrack(trackIndex: number, volume: number, shouldPlay: boolean): Promise<void> {
     this.currentTrackIndex = trackIndex;
     const audio = this.getAudio();
-    audio.src = `/audio/${MUSIC_TRACKS[trackIndex].fileName}.mp3`;
+    const audioPath = await getAudioPath(MUSIC_TRACKS[trackIndex].fileName);
+    audio.src = audioPath;
     audio.volume = volume;
 
     if (shouldPlay) {

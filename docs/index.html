@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CapyFocus - Stay Focused, Stay Chill</title>
+    <meta name="description" content="A beautiful floating productivity widget for macOS. Pomodoro timer, ambient music, and task tracking - all in a cozy capybara-themed app.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="CapyFocus - Stay Focused, Stay Chill">
+    <meta property="og:description" content="A beautiful floating productivity widget for macOS with Pomodoro timer, ambient music, and task tracking.">
+    <meta property="og:image" content="og-image.png">
+    <meta property="og:type" content="website">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #8B5CF6;
+            --primary-dark: #7C3AED;
+            --bg-dark: #0f0f23;
+            --bg-card: #1a1a2e;
+            --text: #ffffff;
+            --text-muted: #a0a0b0;
+            --accent: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Gradient background */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+                var(--bg-dark);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        header {
+            padding: 24px 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .logo img {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 80px 0 60px;
+            text-align: center;
+        }
+
+        .hero-icon {
+            width: 140px;
+            height: 140px;
+            border-radius: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3);
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fff 0%, #a0a0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Download Button */
+        .download-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.5);
+        }
+
+        .download-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .download-info {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .chip-select {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .chip-btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            background: var(--bg-card);
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s ease;
+        }
+
+        .chip-btn:hover {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        /* Features */
+        .features {
+            padding: 80px 0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 32px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Install Guide */
+        .install-guide {
+            padding: 60px 0;
+        }
+
+        .install-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .install-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .hero {
+                padding: 60px 0 40px;
+            }
+
+            .hero-icon {
+                width: 100px;
+                height: 100px;
+            }
+
+            .chip-select {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="icon.png" alt="CapyFocus">
+                <span>CapyFocus</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <img src="icon.png" alt="CapyFocus App Icon" class="hero-icon">
+                <h1>Stay Focused, Stay Chill</h1>
+                <p class="tagline">A beautiful floating productivity widget for macOS. Pomodoro timer, ambient music, and task tracking.</p>
+
+                <div class="download-section">
+                    <a href="https://github.com/Sulaimanov18/focus-flow-app-mac/releases/latest/download/CapyFocus-1.0.0-arm64.dmg" class="download-btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+                        </svg>
+                        Download for Mac
+                    </a>
+                    <p class="download-info">macOS 10.12 or later required</p>
+                    <div class="chip-select">
+                        <a href="https://github.com/Sulaimanov18/focus-flow-app-mac/releases/latest/download/CapyFocus-1.0.0-arm64.dmg" class="chip-btn">Apple Silicon (M1/M2/M3)</a>
+                        <a href="https://github.com/Sulaimanov18/focus-flow-app-mac/releases/latest/download/CapyFocus-1.0.0.dmg" class="chip-btn">Intel Mac</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🍅</div>
+                        <h3>Pomodoro Timer</h3>
+                        <p>Stay productive with customizable focus sessions. Work in focused bursts with built-in breaks.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎵</div>
+                        <h3>Ambient Music</h3>
+                        <p>Curated lo-fi and ambient tracks to help you get in the zone and maintain focus.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📋</div>
+                        <h3>Task Tracking</h3>
+                        <p>Keep track of your tasks and see your progress throughout the day.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🪟</div>
+                        <h3>Floating Widget</h3>
+                        <p>Always-on-top window stays visible while you work. Minimal and non-intrusive design.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎨</div>
+                        <h3>Beautiful Design</h3>
+                        <p>Native macOS vibrancy effects with a cozy, capybara-themed aesthetic.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⌨️</div>
+                        <h3>Global Shortcut</h3>
+                        <p>Press Cmd+Shift+F anytime to toggle the mini widget from anywhere.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="install-guide">
+            <div class="container">
+                <div class="install-card">
+                    <h2>How to Install</h2>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Download the DMG</h4>
+                                <p>Click the download button above to get the installer for your Mac.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Open the DMG</h4>
+                                <p>Double-click the downloaded file to mount the disk image.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Drag to Applications</h4>
+                                <p>Drag CapyFocus to your Applications folder.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>First Launch</h4>
+                                <p>Right-click the app and select "Open" (required for unsigned apps). After that, it will open normally.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Made with capybara vibes. <a href="https://github.com/Sulaimanov18/focus-flow-app-mac">View on GitHub</a></p>
+        </div>
+    </footer>
+</body>
+</html>

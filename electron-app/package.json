@@ -49,18 +49,52 @@
     "productName": "CapyFocus",
     "mac": {
       "category": "public.app-category.productivity",
-      "target": "dmg",
-      "icon": "assets/icons/app/CapyFocus.icns"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icons/app/CapyFocus.icns",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "CapyFocus",
+      "icon": "assets/icons/app/CapyFocus.icns",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 400
+      }
     },
     "files": [
       "dist/**/*",
-      "assets/icons/**/*"
+      "assets/**/*"
     ],
     "extraResources": [
       {
         "from": "assets/icons",
         "to": "icons"
+      },
+      {
+        "from": "public/audio",
+        "to": "audio"
       }
-    ]
+    ],
+    "directories": {
+      "output": "release"
+    }
   }
 }
