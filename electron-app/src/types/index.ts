@@ -179,18 +179,70 @@ export interface UserFocusContext {
     currentTask?: string;
   };
 
+  // Current timer state (for action-aware responses)
+  timer: {
+    isRunning: boolean;
+    mode: TimerMode;
+    secondsLeft: number;
+  };
+
   // User's local time for context
   localTime: string; // ISO timestamp
   timezone: string;
 }
 
+// ============================================================
+// Coach Memory Types
+// ============================================================
+
+export interface MemoryProfile {
+  primary_goal?: string;
+  focus_style?: string;
+  best_session_length_min?: number;
+  common_distractions?: string[];
+  best_time_of_day?: string;
+  preferred_tone?: string;
+  last_updated_reason?: string;
+}
+
+// ============================================================
+// Coach Action Types
+// ============================================================
+
+export type CoachActionType =
+  // Timer/session actions
+  | 'START_SESSION'
+  | 'PAUSE_SESSION'
+  | 'RESUME_SESSION'
+  | 'STOP_SESSION'
+  | 'SET_SESSION_DURATION'
+  // Environment actions
+  | 'SET_BACKGROUND_SOUND'
+  | 'SET_VOLUME'
+  | 'TOGGLE_MIND_LOCK'
+  | 'TOGGLE_BREATHING'
+  // Study/task actions
+  | 'SET_FOCUS_INTENT'
+  | 'SUGGEST_SUBTASKS'
+  | 'LINK_TASK_TO_TIMER'
+  // Reflection actions
+  | 'OPEN_REFLECTION'
+  | 'LOG_MOOD'
+  | 'SAVE_NOTE';
+
+export interface CoachAction {
+  type: CoachActionType;
+  payload: Record<string, unknown>;
+}
+
 // Response format from AI Coach (structured JSON)
 export interface CoachResponse {
-  summary: string;
-  observations: AIObservation[];
+  message: string;
+  observations: string[];
   recommendations: string[];
-  question?: string;
-  confidence: number;
+  actions: CoachAction[];
+  follow_up_question: string | null;
+  memory_update: Partial<MemoryProfile> | null;
 }
 
 // Chat request payload

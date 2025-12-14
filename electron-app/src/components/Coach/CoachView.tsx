@@ -2,31 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useCoachStore } from '../../stores/useCoachStore';
 import { useAppStore, getTodaySummary } from '../../stores/useAppStore';
 import { aiCoachService } from '../../services/aiCoach';
-import { AIMessage, AIInsight, CoachResponse, ObservationType } from '../../types';
+import { executeAction, getActionDescription } from '../../services/coachActionDispatcher';
+import { AIMessage, AIInsight, CoachResponse, CoachAction } from '../../types';
 
 // ─────────────────────────────────────────────────────────────
 // Helper Components
 // ─────────────────────────────────────────────────────────────
-
-function ObservationBadge({ type }: { type: ObservationType }) {
-  const colors = {
-    positive: 'bg-green-500/20 text-green-400',
-    neutral: 'bg-blue-500/20 text-blue-400',
-    concern: 'bg-yellow-500/20 text-yellow-400',
-  };
-
-  const labels = {
-    positive: 'Good',
-    neutral: 'Note',
-    concern: 'Tip',
-  };
-
-  return (
-    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${colors[type]}`}>
-      {labels[type]}
-    </span>
-  );
-}
 
 function LoadingDots() {
   return (
@@ -35,6 +16,41 @@ function LoadingDots() {
       <div className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce [animation-delay:-0.15s]" />
       <div className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" />
     </div>
+  );
+}
+
+// Action button component
+interface ActionButtonProps {
+  action: CoachAction;
+  executed: boolean;
+  onExecute: () => void;
+}
+
+function ActionButton({ action, executed, onExecute }: ActionButtonProps) {
+  const description = getActionDescription(action);
+
+  return (
+    <button
+      onClick={onExecute}
+      disabled={executed}
+      className={`flex items-center gap-1.5 px-2 py-1 text-[11px] font-medium rounded-md transition-all ${
+        executed
+          ? 'bg-green-500/20 text-green-400 cursor-default'
+          : 'bg-accent/20 text-accent hover:bg-accent/30 active:scale-95'
+      }`}
+    >
+      {executed ? (
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )}
+      {description}
+    </button>
   );
 }
 
@@ -49,16 +65,27 @@ interface MessageBubbleProps {
 
 function MessageBubble({ message, isLast }: MessageBubbleProps) {
   const isUser = message.role === 'user';
+  const [executedActions, setExecutedActions] = useState<Set<number>>(new Set());
 
   // Try to parse assistant message as CoachResponse
   let parsed: CoachResponse | null = null;
   if (!isUser) {
     try {
-      parsed = JSON.parse(message.content);
+      const content = JSON.parse(message.content);
+      // Validate it has the new format
+      if (typeof content.message === 'string') {
+        parsed = content as CoachResponse;
+      }
     } catch {
       // Not JSON, display as text
     }
   }
+
+  const handleExecuteAction = (action: CoachAction, index: number) => {
+    if (executedActions.has(index)) return;
+    executeAction(action);
+    setExecutedActions((prev) => new Set(prev).add(index));
+  };
 
   if (isUser) {
     return (
@@ -70,21 +97,21 @@ function MessageBubble({ message, isLast }: MessageBubbleProps) {
     );
   }
 
-  // Assistant message with structured response
+  // Assistant message with structured response (new format)
   if (parsed) {
     return (
       <div className="flex justify-start">
         <div className="max-w-[90%] bg-white/5 rounded-2xl rounded-bl-md px-3 py-2 space-y-2">
-          {/* Summary */}
-          <p className="text-sm text-white/90">{parsed.summary}</p>
+          {/* Message (supports \n for line breaks) */}
+          <div className="text-sm text-white/90 whitespace-pre-line">{parsed.message}</div>
 
           {/* Observations */}
           {parsed.observations && parsed.observations.length > 0 && (
-            <div className="space-y-1.5 pt-1">
+            <div className="space-y-1 pt-1">
               {parsed.observations.map((obs, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <ObservationBadge type={obs.type} />
-                  <p className="text-xs text-white/70 flex-1">{obs.text}</p>
+                  <span className="text-blue-400 text-xs mt-0.5">•</span>
+                  <p className="text-xs text-white/70">{obs}</p>
                 </div>
               ))}
             </div>
@@ -102,10 +129,24 @@ function MessageBubble({ message, isLast }: MessageBubbleProps) {
             </div>
           )}
 
+          {/* Actions */}
+          {parsed.actions && parsed.actions.length > 0 && (
+            <div className="pt-2 flex flex-wrap gap-1.5 border-t border-white/5">
+              {parsed.actions.map((action, i) => (
+                <ActionButton
+                  key={i}
+                  action={action}
+                  executed={executedActions.has(i)}
+                  onExecute={() => handleExecuteAction(action, i)}
+                />
+              ))}
+            </div>
+          )}
+
           {/* Follow-up question */}
-          {parsed.question && (
+          {parsed.follow_up_question && (
             <p className="text-xs text-white/50 italic pt-1 border-t border-white/5">
-              {parsed.question}
+              {parsed.follow_up_question}
             </p>
           )}
         </div>
@@ -113,7 +154,7 @@ function MessageBubble({ message, isLast }: MessageBubbleProps) {
     );
   }
 
-  // Plain text assistant message
+  // Plain text assistant message (fallback)
   return (
     <div className="flex justify-start">
       <div className="max-w-[80%] bg-white/5 rounded-2xl rounded-bl-md px-3 py-2">
@@ -177,8 +218,10 @@ function InsightCard({ insight, onDelete }: InsightCardProps) {
         <div className="space-y-1">
           {insight.observations.map((obs, i) => (
             <div key={i} className="flex items-start gap-2">
-              <ObservationBadge type={obs.type} />
-              <p className="text-xs text-white/60">{obs.text}</p>
+              <span className="text-blue-400 text-xs mt-0.5">•</span>
+              <p className="text-xs text-white/60">
+                {typeof obs === 'string' ? obs : obs.text}
+              </p>
             </div>
           ))}
         </div>

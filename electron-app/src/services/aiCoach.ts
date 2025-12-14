@@ -10,11 +10,44 @@ import {
   CoachInsightResponse,
   InsightPeriod,
   TimerMode,
+  MemoryProfile,
 } from '../types';
+
+const isDev = import.meta.env.DEV;
 
 const SUPABASE_URL = 'https://arywfvsmpmdphnbfzltu.supabase.co';
 
 export class AICoachService {
+  // ============================================================
+  // Memory Profile (dev debugging only)
+  // ============================================================
+
+  /**
+   * Fetch the current user's memory profile from Supabase.
+   * This is primarily for dev debugging - memory is managed server-side.
+   */
+  async getMemoryProfile(userId: string): Promise<MemoryProfile | null> {
+    const { data, error } = await supabase
+      .from('coach_profiles')
+      .select('profile')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      if (error.code !== 'PGRST116') {
+        // PGRST116 = no rows returned, which is expected for new users
+        console.error('Error fetching memory profile:', error);
+      }
+      return null;
+    }
+
+    if (isDev && data?.profile) {
+      console.log('[AICoach] Memory profile loaded:', data.profile);
+    }
+
+    return data?.profile || null;
+  }
+
   // ============================================================
   // Timer Session Logging
   // ============================================================

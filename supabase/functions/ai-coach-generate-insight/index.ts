@@ -5,7 +5,14 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { corsHeaders, handleCorsPrelight } from '../_shared/cors.ts';
 import { createSupabaseAdmin, getUserFromAuth } from '../_shared/supabase.ts';
 import { checkRateLimit } from '../_shared/rate-limit.ts';
-import { INSIGHT_SYSTEM_PROMPT, buildContextPrompt, FocusContext } from '../_shared/coach-prompt.ts';
+import {
+  INSIGHT_SYSTEM_PROMPT,
+  buildContextPrompt,
+  buildMemoryPrompt,
+  validateMemoryUpdate,
+  FocusContext,
+  MemoryProfile,
+} from '../_shared/coach-prompt.ts';
 
 type InsightPeriod = 'session' | 'day' | 'week';
 
@@ -21,6 +28,7 @@ interface InsightResponse {
   recommendations: string[];
   question?: string;
   confidence: number;
+  memory_update?: Partial<MemoryProfile> | null;
 }
 
 serve(async (req: Request) => {
@@ -75,6 +83,15 @@ serve(async (req: Request) => {
 
     const supabase = createSupabaseAdmin();
 
+    // Load user's memory profile
+    const { data: profileData } = await supabase
+      .from('coach_profiles')
+      .select('profile')
+      .eq('user_id', user.id)
+      .single();
+
+    const userMemory: MemoryProfile | null = profileData?.profile || null;
+
     // Build period-specific prompt
     let periodPrompt = '';
     switch (period) {
@@ -106,6 +123,7 @@ Focus on:
     // Build messages for OpenAI
     const messages = [
       { role: 'system', content: INSIGHT_SYSTEM_PROMPT },
+      { role: 'system', content: buildMemoryPrompt(userMemory) },
       { role: 'system', content: buildContextPrompt(context) },
       { role: 'user', content: periodPrompt },
     ];
@@ -156,6 +174,36 @@ Focus on:
         recommendations: [],
         confidence: 0.5,
       };
+    }
+
+    // Handle memory_update if present
+    const validatedMemoryUpdate = insightResponse.memory_update
+      ? validateMemoryUpdate(insightResponse.memory_update)
+      : null;
+
+    if (validatedMemoryUpdate && Object.keys(validatedMemoryUpdate).length > 0) {
+      const updatedMemory: MemoryProfile = {
+        ...(userMemory || {}),
+        ...validatedMemoryUpdate,
+      };
+
+      // Upsert the memory profile
+      const { error: memoryError } = await supabase
+        .from('coach_profiles')
+        .upsert(
+          {
+            user_id: user.id,
+            profile: updatedMemory,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (memoryError) {
+        console.error('Error updating memory profile from insight:', memoryError);
+      } else {
+        console.log('Memory profile updated from insight:', validatedMemoryUpdate);
+      }
     }
 
     // Save insight to database
