@@ -15,7 +15,8 @@ JSON shape:
   "observations": string[],
   "recommendations": string[],
   "actions": { "type": string, "payload": object }[],
-  "follow_up_question": string | null
+  "follow_up_question": string | null,
+  "memory_update": { ...keys } | null
 }
 
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -79,6 +80,33 @@ actions:
 - 0–3 actions
 follow_up_question:
 - null or 1 question
+memory_update:
+- null or object with allowed keys only
+
+━━━━━━━━━━━━━━━━━━━━━━
+MEMORY
+━━━━━━━━━━━━━━━━━━━━━━
+You may receive user memory below. Use it to personalize responses.
+Do NOT explicitly mention memory unless the user asks about it.
+
+If during conversation you learn new facts about the user, return memory_update with ONLY changed keys:
+Allowed keys (all optional):
+- primary_goal: string (their main study/work goal)
+- focus_style: string (e.g. "short bursts", "deep work", "variable")
+- best_session_length_min: number (preferred focus duration)
+- common_distractions: string[] (things that break focus)
+- best_time_of_day: string (e.g. "morning", "evening", "afternoon")
+- preferred_tone: string (e.g. "direct", "encouraging", "gentle")
+- last_updated_reason: string (brief note why you updated)
+
+MEMORY UPDATE RULES:
+1) Only return memory_update when you learn something NEW and concrete.
+2) Do NOT guess or infer vague preferences.
+3) If nothing new learned, return "memory_update": null.
+4) Only include keys that changed, not the entire memory.
+
+Example memory_update:
+{ "best_session_length_min": 15, "last_updated_reason": "user said 15min works best" }
 
 ━━━━━━━━━━━━━━━━━━━━━━
 EXAMPLES
@@ -117,7 +145,8 @@ You MUST respond with valid JSON matching this exact schema:
   "observations": ["Specific observation based on data"],
   "recommendations": ["Concrete action based on the data"],
   "actions": [],
-  "follow_up_question": "Optional question to prompt reflection" | null
+  "follow_up_question": "Optional question to prompt reflection" | null,
+  "memory_update": { ...keys } | null
 }
 
 Guidelines:
@@ -126,7 +155,52 @@ Guidelines:
 - For week insights: Identify trends and weekly rhythms
 - Reference specific numbers when relevant
 - Be honest but not harsh
-- Never invent data`;
+- Never invent data
+
+━━━━━━━━━━━━━━━━━━━━━━
+MEMORY
+━━━━━━━━━━━━━━━━━━━━━━
+If analyzing data reveals NEW facts about the user's patterns, return memory_update with ONLY changed keys:
+Allowed keys (all optional):
+- primary_goal: string (their main study/work goal)
+- focus_style: string (e.g. "short bursts", "deep work", "variable")
+- best_session_length_min: number (preferred focus duration based on completion rates)
+- common_distractions: string[] (things that break focus, if mentioned)
+- best_time_of_day: string (e.g. "morning", "evening", "afternoon")
+- preferred_tone: string (e.g. "direct", "encouraging", "gentle")
+- last_updated_reason: string (brief note why you updated)
+
+MEMORY UPDATE RULES:
+1) Only return memory_update when data reveals something NEW and concrete.
+2) For session insights: update if session length/completion suggests optimal duration.
+3) For day/week insights: update if patterns reveal best time of day or focus style.
+4) If nothing new learned, return "memory_update": null.
+5) Only include keys that changed, not the entire memory.
+
+Example memory_update:
+{ "best_session_length_min": 20, "last_updated_reason": "3 consecutive 20min sessions completed vs incomplete 25min ones" }`;
+
+// Memory profile stored in coach_profiles table
+export interface MemoryProfile {
+  primary_goal?: string;
+  focus_style?: string;
+  best_session_length_min?: number;
+  common_distractions?: string[];
+  best_time_of_day?: string;
+  preferred_tone?: string;
+  last_updated_reason?: string;
+}
+
+// Allowed keys for memory updates (for validation)
+export const ALLOWED_MEMORY_KEYS = [
+  'primary_goal',
+  'focus_style',
+  'best_session_length_min',
+  'common_distractions',
+  'best_time_of_day',
+  'preferred_tone',
+  'last_updated_reason',
+] as const;
 
 export interface FocusContext {
   recentSessions: {
@@ -203,4 +277,65 @@ export function buildContextPrompt(context: FocusContext): string {
   lines.push(`- Average pomodoros per task: ${context.taskStats.averagePomodorosPerTask.toFixed(1)}`);
 
   return lines.join('\n');
+}
+
+// Build a compact memory prompt to inject into system context
+export function buildMemoryPrompt(memory: MemoryProfile | null): string {
+  if (!memory || Object.keys(memory).length === 0) {
+    return 'User Memory: (none yet)';
+  }
+
+  // Build compact JSON representation, excluding last_updated_reason from display
+  const displayMemory: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(memory)) {
+    if (key !== 'last_updated_reason' && value !== undefined && value !== null) {
+      displayMemory[key] = value;
+    }
+  }
+
+  if (Object.keys(displayMemory).length === 0) {
+    return 'User Memory: (none yet)';
+  }
+
+  return `User Memory:\n${JSON.stringify(displayMemory, null, 0)}`;
+}
+
+// Validate and sanitize memory update from AI response
+export function validateMemoryUpdate(
+  update: unknown
+): Partial<MemoryProfile> | null {
+  if (!update || typeof update !== 'object') {
+    return null;
+  }
+
+  const validated: Partial<MemoryProfile> = {};
+  const obj = update as Record<string, unknown>;
+
+  // Only allow specific keys with correct types
+  if (typeof obj.primary_goal === 'string' && obj.primary_goal.trim()) {
+    validated.primary_goal = obj.primary_goal.trim().slice(0, 200);
+  }
+  if (typeof obj.focus_style === 'string' && obj.focus_style.trim()) {
+    validated.focus_style = obj.focus_style.trim().slice(0, 100);
+  }
+  if (typeof obj.best_session_length_min === 'number' && obj.best_session_length_min > 0) {
+    validated.best_session_length_min = Math.min(Math.max(5, obj.best_session_length_min), 120);
+  }
+  if (Array.isArray(obj.common_distractions)) {
+    validated.common_distractions = obj.common_distractions
+      .filter((d): d is string => typeof d === 'string' && d.trim().length > 0)
+      .map((d) => d.trim().slice(0, 50))
+      .slice(0, 5);
+  }
+  if (typeof obj.best_time_of_day === 'string' && obj.best_time_of_day.trim()) {
+    validated.best_time_of_day = obj.best_time_of_day.trim().slice(0, 50);
+  }
+  if (typeof obj.preferred_tone === 'string' && obj.preferred_tone.trim()) {
+    validated.preferred_tone = obj.preferred_tone.trim().slice(0, 50);
+  }
+  if (typeof obj.last_updated_reason === 'string' && obj.last_updated_reason.trim()) {
+    validated.last_updated_reason = obj.last_updated_reason.trim().slice(0, 200);
+  }
+
+  return Object.keys(validated).length > 0 ? validated : null;
 }

@@ -192,6 +192,20 @@ export interface UserFocusContext {
 }
 
 // ============================================================
+// Coach Memory Types
+// ============================================================
+
+export interface MemoryProfile {
+  primary_goal?: string;
+  focus_style?: string;
+  best_session_length_min?: number;
+  common_distractions?: string[];
+  best_time_of_day?: string;
+  preferred_tone?: string;
+  last_updated_reason?: string;
+}
+
+// ============================================================
 // Coach Action Types
 // ============================================================
 
@@ -228,6 +242,7 @@ export interface CoachResponse {
   recommendations: string[];
   actions: CoachAction[];
   follow_up_question: string | null;
+  memory_update: Partial<MemoryProfile> | null;
 }
 
 // Chat request payload

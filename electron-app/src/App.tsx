@@ -15,12 +15,16 @@ import { MiniWidgetView } from './components/MiniWidget/MiniWidgetView';
 import { audioPlayer } from './services/audioPlayer';
 import { supabase } from './services/supabase';
 import { backgroundSoundPlayer } from './services/backgroundSoundPlayer';
+import { useSessionTracker } from './hooks/useSessionTracker';
 
 function App() {
   const { selectedTab, isCollapsed, setIsCollapsed, isLoggedIn, isPlaying, currentTrackIndex, volume, setAuthView, setSelectedTab, timer } = useAppStore();
   const { theme, timerSize, alwaysOnTop, backgroundSound, soundVolume, autoStartSound } = useSettingsStore();
   const [mounted, setMounted] = useState(false);
   const [isMiniWidget, setIsMiniWidget] = useState(false);
+
+  // Track timer sessions and generate AI insights on completion
+  useSessionTracker();
 
   // Apply theme class to body
   useEffect(() => {

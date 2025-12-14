@@ -5,7 +5,14 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { corsHeaders, handleCorsPrelight } from '../_shared/cors.ts';
 import { createSupabaseAdmin, getUserFromAuth } from '../_shared/supabase.ts';
 import { checkRateLimit } from '../_shared/rate-limit.ts';
-import { COACH_SYSTEM_PROMPT, buildContextPrompt, FocusContext } from '../_shared/coach-prompt.ts';
+import {
+  COACH_SYSTEM_PROMPT,
+  buildContextPrompt,
+  buildMemoryPrompt,
+  validateMemoryUpdate,
+  FocusContext,
+  MemoryProfile,
+} from '../_shared/coach-prompt.ts';
 
 interface ChatRequest {
   conversation_id?: string;
@@ -13,12 +20,100 @@ interface ChatRequest {
   context: FocusContext;
 }
 
+// Action types the coach can propose
+type CoachActionType =
+  | 'START_SESSION'
+  | 'PAUSE_SESSION'
+  | 'RESUME_SESSION'
+  | 'STOP_SESSION'
+  | 'SET_SESSION_DURATION'
+  | 'SET_BACKGROUND_SOUND'
+  | 'SET_VOLUME'
+  | 'TOGGLE_MIND_LOCK'
+  | 'TOGGLE_BREATHING'
+  | 'SET_FOCUS_INTENT'
+  | 'SUGGEST_SUBTASKS'
+  | 'LINK_TASK_TO_TIMER'
+  | 'OPEN_REFLECTION'
+  | 'LOG_MOOD'
+  | 'SAVE_NOTE';
+
+interface CoachAction {
+  type: CoachActionType;
+  payload: Record<string, unknown>;
+}
+
 interface CoachResponse {
-  summary: string;
-  observations: Array<{ type: 'positive' | 'neutral' | 'concern'; text: string }>;
+  message: string;
+  observations: string[];
   recommendations: string[];
-  question?: string;
-  confidence: number;
+  actions: CoachAction[];
+  follow_up_question: string | null;
+  memory_update: Partial<MemoryProfile> | null;
+}
+
+// Validate coach response matches expected schema
+function validateCoachResponse(data: unknown): CoachResponse | null {
+  if (!data || typeof data !== 'object') return null;
+
+  const obj = data as Record<string, unknown>;
+
+  // Required fields
+  if (typeof obj.message !== 'string') return null;
+  if (!Array.isArray(obj.observations)) return null;
+  if (!Array.isArray(obj.recommendations)) return null;
+  if (!Array.isArray(obj.actions)) return null;
+  if (obj.follow_up_question !== null && typeof obj.follow_up_question !== 'string') return null;
+
+  // Validate observations are strings
+  if (!obj.observations.every((o: unknown) => typeof o === 'string')) return null;
+
+  // Validate recommendations are strings
+  if (!obj.recommendations.every((r: unknown) => typeof r === 'string')) return null;
+
+  // Validate actions have type and payload
+  const validActionTypes = new Set([
+    'START_SESSION', 'PAUSE_SESSION', 'RESUME_SESSION', 'STOP_SESSION', 'SET_SESSION_DURATION',
+    'SET_BACKGROUND_SOUND', 'SET_VOLUME', 'TOGGLE_MIND_LOCK', 'TOGGLE_BREATHING',
+    'SET_FOCUS_INTENT', 'SUGGEST_SUBTASKS', 'LINK_TASK_TO_TIMER',
+    'OPEN_REFLECTION', 'LOG_MOOD', 'SAVE_NOTE'
+  ]);
+
+  for (const action of obj.actions as unknown[]) {
+    if (!action || typeof action !== 'object') return null;
+    const a = action as Record<string, unknown>;
+    if (typeof a.type !== 'string' || !validActionTypes.has(a.type)) return null;
+    if (!a.payload || typeof a.payload !== 'object') return null;
+  }
+
+  // Enforce max 3 actions
+  const validatedActions = (obj.actions as CoachAction[]).slice(0, 3);
+
+  // Validate memory_update if present
+  const memoryUpdate = obj.memory_update
+    ? validateMemoryUpdate(obj.memory_update)
+    : null;
+
+  return {
+    message: obj.message as string,
+    observations: (obj.observations as string[]).slice(0, 3),
+    recommendations: (obj.recommendations as string[]).slice(0, 3),
+    actions: validatedActions,
+    follow_up_question: obj.follow_up_question as string | null,
+    memory_update: memoryUpdate,
+  };
+}
+
+// Safe fallback response when validation fails
+function createFallbackResponse(rawMessage?: string): CoachResponse {
+  return {
+    message: rawMessage || "I'm here to help. What would you like to focus on?",
+    observations: [],
+    recommendations: [],
+    actions: [],
+    follow_up_question: null,
+    memory_update: null,
+  };
 }
 
 serve(async (req: Request) => {
@@ -73,6 +168,15 @@ serve(async (req: Request) => {
 
     const supabase = createSupabaseAdmin();
 
+    // Load user's memory profile
+    const { data: profileData } = await supabase
+      .from('coach_profiles')
+      .select('profile')
+      .eq('user_id', user.id)
+      .single();
+
+    const userMemory: MemoryProfile | null = profileData?.profile || null;
+
     // Get or create conversation
     let conversationId = conversation_id;
     if (!conversationId) {
@@ -100,6 +204,7 @@ serve(async (req: Request) => {
     // Build messages array for OpenAI
     const messages: Array<{ role: string; content: string }> = [
       { role: 'system', content: COACH_SYSTEM_PROMPT },
+      { role: 'system', content: buildMemoryPrompt(userMemory) },
       { role: 'system', content: buildContextPrompt(context) },
     ];
 
@@ -147,19 +252,48 @@ serve(async (req: Request) => {
       throw new Error('No response from AI');
     }
 
-    // Parse the JSON response
+    // Parse and validate the JSON response
     let coachResponse: CoachResponse;
     try {
-      coachResponse = JSON.parse(assistantContent);
+      const parsed = JSON.parse(assistantContent);
+      const validated = validateCoachResponse(parsed);
+      if (validated) {
+        coachResponse = validated;
+      } else {
+        console.warn('AI response failed validation:', assistantContent);
+        // Try to extract message if it exists, otherwise use raw content
+        const message = typeof parsed?.message === 'string' ? parsed.message : assistantContent;
+        coachResponse = createFallbackResponse(message);
+      }
     } catch {
-      console.error('Failed to parse AI response:', assistantContent);
-      // Fallback response
-      coachResponse = {
-        summary: assistantContent,
-        observations: [],
-        recommendations: [],
-        confidence: 0.5,
+      console.error('Failed to parse AI response as JSON:', assistantContent);
+      coachResponse = createFallbackResponse();
+    }
+
+    // Handle memory update if present
+    if (coachResponse.memory_update && Object.keys(coachResponse.memory_update).length > 0) {
+      const updatedMemory: MemoryProfile = {
+        ...(userMemory || {}),
+        ...coachResponse.memory_update,
       };
+
+      // Upsert the memory profile
+      const { error: memoryError } = await supabase
+        .from('coach_profiles')
+        .upsert(
+          {
+            user_id: user.id,
+            profile: updatedMemory,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (memoryError) {
+        console.error('Error updating memory profile:', memoryError);
+      } else {
+        console.log('Memory profile updated:', coachResponse.memory_update);
+      }
     }
 
     // Save user message to database
