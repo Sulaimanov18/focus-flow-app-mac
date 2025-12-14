@@ -9,6 +9,7 @@ import { MusicView } from './components/Music/MusicView';
 import { AuthView } from './components/Auth/AuthView';
 import { CalendarView } from './components/Calendar/CalendarView';
 import { SettingsView } from './components/Settings/SettingsView';
+import { CoachView } from './components/Coach/CoachView';
 import { CollapsedView } from './components/CollapsedView';
 import { MiniWidgetView } from './components/MiniWidget/MiniWidgetView';
 import { audioPlayer } from './services/audioPlayer';
@@ -150,6 +151,8 @@ function App() {
           return <TasksView />;
         case 'notes':
           return <NotesView />;
+        case 'coach':
+          return <CoachView />;
         case 'music':
           return <MusicView />;
         case 'calendar':
@@ -175,6 +178,7 @@ function App() {
     timer: 'Timer',
     tasks: 'Tasks',
     notes: 'Notes',
+    coach: 'Coach',
     music: 'Music',
     calendar: 'Calendar',
     account: 'Account',
